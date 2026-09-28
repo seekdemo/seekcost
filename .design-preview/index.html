@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SeekCost 视觉重设计 · 设计稿 v1</title>
+<style>
+  /* ============ 设计令牌（预览） ============ */
+  :root {
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-active: #3a31b0;
+    --accent-light: #6366f1;
+    --accent-tint: rgba(79,70,229,.07);
+    --accent-tint-strong: rgba(79,70,229,.12);
+    --page: #f6f7fb;
+    --surface: #ffffff;
+    --surface-2: #f2f4fa;
+    --border: #e4e8f0;
+    --border-strong: #cfd6e4;
+    --text-1: #0c1322;
+    --text-2: #4b5568;
+    --text-3: #8a94a8;
+    --up: #e5484d;        /* 涨：红（中国市场习惯） */
+    --up-tint: rgba(229,72,77,.08);
+    --down: #0f9d58;      /* 跌：绿 */
+    --down-tint: rgba(15,157,88,.08);
+    --warn: #b45309;
+    --warn-tint: rgba(217,119,6,.10);
+    --info: #0284c7;
+    --info-tint: rgba(2,132,199,.08);
+    --ok: #0d9488;
+    --ok-tint: rgba(13,148,136,.10);
+    --sh-1: 0 1px 2px rgba(16,24,40,.05);
+    --sh-card: 0 1px 3px rgba(16,24,40,.05), 0 1px 2px rgba(16,24,40,.03);
+    --sh-md: 0 4px 12px -2px rgba(16,24,40,.08), 0 2px 4px -2px rgba(16,24,40,.04);
+    --sh-lg: 0 24px 64px -24px rgba(16,24,40,.20), 0 8px 24px -12px rgba(16,24,40,.10);
+    --nav-bg: rgba(255,255,255,.82);
+    --mesh-1: rgba(79,70,229,.10);
+    --mesh-2: rgba(56,189,248,.10);
+    --code-bg: #0e121b;
+  }
+  html[data-theme="dark"] {
+    --accent: #818cf8;
+    --accent-hover: #a5b4fc;
+    --accent-active: #6366f1;
+    --accent-light: #a5b4fc;
+    --accent-tint: rgba(129,140,248,.12);
+    --accent-tint-strong: rgba(129,140,248,.20);
+    --page: #0a0d15;
+    --surface: #12161f;
+    --surface-2: #1a1f2c;
+    --border: #232a3a;
+    --border-strong: #333c52;
+    --text-1: #e9edf5;
+    --text-2: #9aa6bd;
+    --text-3: #63708a;
+    --up: #f26d72;
+    --up-tint: rgba(242,109,114,.12);
+    --down: #34d399;
+    --down-tint: rgba(52,211,153,.10);
+    --warn: #fbbf24;
+    --warn-tint: rgba(251,191,36,.12);
+    --info: #38bdf8;
+    --info-tint: rgba(56,189,248,.12);
+    --ok: #2dd4bf;
+    --ok-tint: rgba(45,212,191,.12);
+    --sh-1: 0 1px 2px rgba(0,0,0,.4);
+    --sh-card: 0 1px 3px rgba(0,0,0,.35);
+    --sh-md: 0 4px 14px -2px rgba(0,0,0,.45);
+    --sh-lg: 0 24px 64px -24px rgba(0,0,0,.7);
+    --nav-bg: rgba(10,13,21,.82);
+    --mesh-1: rgba(99,102,241,.16);
+    --mesh-2: rgba(56,189,248,.08);
+    --code-bg: #0c1018;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body {
+    font-family: Inter, "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--page);
+    color: var(--text-1);
+    transition: background .25s, color .25s;
+  }
+  .num { font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+
+  /* ============ 预览页外框（非产品 UI） ============ */
+  .preview-bar {
+    position: sticky; top: 0; z-index: 99;
+    display: flex; align-items: center; gap: 16px;
+    padding: 12px 28px;
+    background: var(--nav-bg); backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .preview-bar strong { font-size: 14px; }
+  .preview-bar .tag { color: var(--text-3); }
+  .preview-bar .spacer { flex: 1; }
+  .theme-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .theme-toggle button {
+    border: 0; background: transparent; color: var(--text-2);
+    padding: 7px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .theme-toggle button.is-on { background: var(--accent-tint); color: var(--accent); }
+  .stage { max-width: 1280px; margin: 0 auto; padding: 48px 28px 80px; }
+  .stage-label { display:flex; align-items:baseline; gap:12px; margin: 56px 0 20px; }
+  .stage-label h2 { font-size: 20px; font-weight: 680; letter-spacing: -.02em; }
+  .stage-label span { font-size: 12.5px; color: var(--text-3); }
+  .stage-label:first-child { margin-top: 0; }
+
+  /* ============ 令牌区 ============ */
+  .token-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .token-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: var(--sh-card); }
+  .token-card h3 { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 14px; }
+  .swatch { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 12.5px; }
+  .swatch i { width: 26px; height: 26px; border-radius: 7px; border: 1px solid rgba(0,0,0,.06); flex: 0 0 auto; }
+  html[data-theme="dark"] .swatch i { border-color: var(--border); }
+  .swatch code { color: var(--text-3); font-size: 11.5px; margin-left: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .type-row { display: flex; align-items: baseline; gap: 14px; padding: 7px 0; border-bottom: 1px dashed var(--border); }
+  .type-row:last-child { border-bottom: 0; }
+  .type-row .cap { width: 76px; flex:0 0 auto; color: var(--text-3); font-size: 11px; font-family: ui-monospace, monospace; }
+  .h-xl { font-size: 30px; font-weight: 680; letter-spacing: -.03em; line-height: 1.2; }
+  .h-lg { font-size: 22px; font-weight: 650; letter-spacing: -.025em; }
+  .h-md { font-size: 15px; font-weight: 620; }
+  .t-body { font-size: 13.5px; color: var(--text-2); line-height: 1.7; }
+  .t-small { font-size: 12px; color: var(--text-3); }
+  .t-money { font-size: 24px; font-weight: 680; letter-spacing: -.02em; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 38px; padding: 0 15px;
+    border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid transparent; cursor: pointer; white-space: nowrap; }
+  .btn-primary { background: var(--accent); color: #fff; box-shadow: var(--sh-1); }
+  .btn-primary:hover { background: var(--accent-hover); }
+  html[data-theme="dark"] .btn-primary { color: #0a0d15; }
+  html[data-theme="dark"] .btn-primary:hover { color: #0a0d15; }
+  .btn-secondary { background: var(--surface); color: var(--text-1); border-color: var(--border-strong); }
+  .btn-secondary:hover { background: var(--surface-2); }
+  .btn-ghost { background: transparent; color: var(--text-2); }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text-1); }
+  .btn-sm { height: 32px; padding: 0 11px; font-size: 12.5px; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .page-head .btn-row { flex-wrap: nowrap; }
+  .input { height: 40px; width: 100%; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface);
+    padding: 0 13px; font-size: 13.5px; color: var(--text-1); outline: none; }
+  .input::placeholder { color: var(--text-3); }
+  .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+  .field { display: grid; gap: 8px; }
+  .field label { font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+  .chip { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .chip-indigo { color: var(--accent); background: var(--accent-tint); }
+  .chip-up { color: var(--up); background: var(--up-tint); }
+  .chip-down { color: var(--down); background: var(--down-tint); }
+  .chip-warn { color: var(--warn); background: var(--warn-tint); }
+  .chip-neutral { color: var(--text-2); background: var(--surface-2); }
+  .notice { display:flex; gap:10px; align-items:flex-start; padding: 11px 14px; border-radius: 10px; font-size: 12.5px; line-height:1.6; }
+  .notice-warn { color: var(--warn); background: var(--warn-tint); }
+  .notice-info { color: var(--info); background: var(--info-tint); }
+  .demo-stack { display: grid; gap: 12px; }
+  .demo-stack .field { max-width: 260px; }
+
+  /* ============ 浏览器框 ============ */
+  .browser { border-radius: 16px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--sh-lg); background: var(--page); }
+  .browser-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .browser-bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--border-strong); display:block; }
+  .browser-url { margin-left: 10px; font-size: 11.5px; color: var(--text-3); background: var(--surface-2); border-radius: 6px; padding: 4px 12px; flex: 1; max-width: 360px; }
+
+  /* ============ 登录页 ============ */
+  .login { display: grid; grid-template-columns: 1.12fr .88fr; min-height: 640px; }
+  .login-aside { position: relative; overflow: hidden; padding: 56px 52px; display: flex; flex-direction: column; }
+  .login-aside::before {
+    content: ""; position: absolute; inset: 0; z-index: 0;
+    background:
+      radial-gradient(520px 380px at 12% -8%, var(--mesh-1), transparent 70%),
+      radial-gradient(460px 360px at 100% 108%, var(--mesh-2), transparent 70%);
+  }
+  .login-aside > * { position: relative; z-index: 1; }
+  .brand { display: flex; align-items: center; gap: 11px; font-weight: 680; font-size: 16.5px; letter-spacing: -.02em; }
+  .brand .logo {
+    width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; box-shadow: var(--sh-md);
+  }
+  html[data-theme="dark"] .brand .logo { color: #0a0d15; }
+  .brand small { display:block; font-size: 9.5px; font-weight: 700; letter-spacing: .22em; color: var(--text-3); margin-top: 1px; }
+  .login-eyebrow { margin-top: auto; padding-top: 72px; }
+  .eyebrow { display:inline-block; font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
+    background: var(--accent-tint); padding: 5px 11px; border-radius: 999px; }
+  .login-title { margin-top: 18px; font-size: 38px; line-height: 1.18; font-weight: 700; letter-spacing: -.035em; }
+  .login-copy { margin-top: 14px; color: var(--text-2); font-size: 14px; line-height: 1.8; max-width: 400px; }
+  .login-points { margin-top: 26px; display: grid; gap: 12px; }
+  .login-point { display: flex; gap: 11px; align-items: flex-start; font-size: 13px; color: var(--text-2); }
+  .login-point i {
+    width: 22px; height: 22px; border-radius: 7px; flex: 0 0 auto; display: grid; place-items: center;
+    background: var(--accent-tint); color: var(--accent); font-style: normal; font-size: 12px; font-weight: 700; }
+  .login-point b { color: var(--text-1); font-weight: 620; }
+  /* 浮动迷你产品卡 */
+  .login-mini {
+    position: absolute; z-index: 1; right: 52px; top: 70px; width: 250px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--sh-lg); padding: 16px; transform: rotate(1.5deg);
+  }
+  .login-mini .mn-head { display:flex; justify-content:space-between; align-items:center; font-size: 11px; color: var(--text-3); }
+  .login-mini .mn-row { display:flex; align-items:center; gap:9px; margin-top: 11px; }
+  .login-mini .mn-sym { font-size: 12.5px; font-weight: 700; width: 52px; }
+  .login-mini .mn-bar { flex:1; height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .login-mini .mn-bar i { display:block; height:100%; border-radius:99px; background: var(--accent); }
+  .login-mini .mn-p { font-size: 11.5px; font-weight: 650; width: 60px; text-align: right; }
+  .login-pane { background: var(--surface); border-left: 1px solid var(--border); display: flex; align-items: center; justify-content: center; padding: 48px; }
+  html[data-theme="dark"] .login-pane { border-left-color: var(--border); }
+  .login-card { width: 100%; max-width: 340px; }
+  .login-card h1 { font-size: 24px; font-weight: 680; letter-spacing: -.03em; }
+  .login-card .sub { margin-top: 7px; font-size: 13px; color: var(--text-3); }
+  .login-form { margin-top: 28px; display: grid; gap: 16px; }
+  .login-form .input { height: 42px; }
+  .login-foot { margin-top: 22px; text-align: center; font-size: 12.5px; color: var(--text-3); }
+  .login-foot a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+  /* ============ 应用内页 ============ */
+  .appnav { display: flex; align-items: center; gap: 26px; height: 60px; padding: 0 32px;
+    background: var(--nav-bg); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+  .appnav .brand .logo { width: 30px; height: 30px; border-radius: 8px; }
+  .appnav .brand { font-size: 14.5px; }
+  .appnav .brand small { font-size: 8.5px; }
+  .tabs { display: inline-flex; gap: 3px; padding: 3px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; }
+  .tabs a { font-size: 12.5px; font-weight: 550; color: var(--text-2); text-decoration: none; padding: 7px 13px; border-radius: 7px; }
+  .tabs a.is-on { background: var(--surface); color: var(--text-1); font-weight: 620; box-shadow: var(--sh-1); }
+  .appnav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .icon-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface);
+    display:grid; place-items:center; color: var(--text-2); }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-tint); color: var(--accent);
+    display:grid; place-items:center; font-size: 12px; font-weight: 700; border: 1px solid var(--accent-tint-strong); }
+
+  .app-body { padding: 30px 32px 40px; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .page-head h1 { font-size: 26px; font-weight: 680; letter-spacing: -.03em; }
+  .page-head p { margin-top: 6px; font-size: 13px; color: var(--text-3); }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 20px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; box-shadow: var(--sh-card); }
+  .stat .s-top { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-3); font-weight: 550; }
+  .stat .s-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .stat .s-val { margin-top: 10px; font-size: 25px; font-weight: 680; letter-spacing: -.025em; }
+  .stat .s-sub { margin-top: 6px; font-size: 11.5px; color: var(--text-3); }
+
+  .panel { margin-top: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--sh-card); overflow: hidden; }
+  .panel-head { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .panel-head h3 { font-size: 14.5px; font-weight: 650; }
+  .panel-head .p-sub { font-size: 12px; color: var(--text-3); }
+  .panel-head .right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .search { display:flex; align-items:center; gap:8px; height: 34px; width: 230px; padding: 0 11px;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); font-size: 12.5px; color: var(--text-3); }
+  .filters { display: flex; gap: 5px; padding: 10px 20px; border-bottom: 1px solid var(--border); }
+  .filters button { height: 30px; padding: 0 12px; border-radius: 7px; border: 0; cursor: pointer;
+    font-size: 12px; font-weight: 600; color: var(--text-3); background: transparent; }
+  .filters button.is-on { background: var(--text-1); color: var(--page); }
+  html[data-theme="dark"] .filters button.is-on { background: var(--accent); color: #0a0d15; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; font-size: 11px; font-weight: 600; color: var(--text-3); padding: 11px 20px; background: var(--surface-2); }
+  thead th.r, tbody td.r { text-align: right; }
+  tbody td { padding: 13px 20px; border-top: 1px solid var(--border); font-size: 12.5px; vertical-align: middle; }
+  tbody tr:hover { background: var(--surface-2); }
+  tbody tr.is-hover { background: var(--surface-2); }
+  .sym { font-weight: 700; font-size: 13px; }
+  .sym-name { display:block; font-size: 11px; color: var(--text-3); font-weight: 400; margin-top: 2px; }
+  .cell-note { color: var(--text-2); font-size: 12px; max-width: 240px; }
+  .cell-note b { color: var(--text-1); font-weight: 600; }
+  .spark { width: 76px; height: 26px; }
+  .spark polyline, .spark line { stroke: var(--accent) !important; }
+
+  .note-strip { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .caption { font-size: 12px; color: var(--text-3); margin-top: 10px; line-height: 1.7; }
+  .caption b { color: var(--text-2); }
+
+  /* ============ 次级导航（通用） ============ */
+  .subnav { display: flex; align-items: center; gap: 2px; padding: 0 32px; height: 46px;
+    border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .subnav a { font-size: 12.5px; font-weight: 550; color: var(--text-3); text-decoration: none;
+    padding: 7px 13px; border-radius: 7px; white-space: nowrap; }
+  .subnav a:hover { color: var(--text-1); background: var(--surface-2); }
+  .subnav a.is-on { color: var(--accent); background: var(--accent-tint); font-weight: 620; }
+
+  /* 页内下划线 Tabs（决策页） */
+  .under-tabs { display: flex; gap: 22px; margin-top: 20px; border-bottom: 1px solid var(--border); }
+  .under-tabs button { height: 42px; border: 0; background: transparent; font-size: 13px; font-weight: 550;
+    color: var(--text-3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .under-tabs button b { font-weight: 650; margin-left: 5px; }
+  .under-tabs button.is-on { color: var(--accent); border-bottom-color: var(--accent); font-weight: 650; }
+
+  /* ============ 注册页路径 ============ */
+  .auth-path { display: flex; align-items: center; gap: 10px; margin-top: 30px; flex-wrap: wrap; }
+  .auth-path span { font-size: 11.5px; font-weight: 650; color: var(--text-2);
+    border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 6px 13px; }
+  .auth-path i { width: 18px; height: 1px; background: var(--border-strong); }
+  .pw-rule { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-3); margin-top: 6px; }
+  .pw-rule .bar { height: 3px; width: 42px; border-radius: 99px; background: var(--border-strong); }
+  .pw-rule .bar.on1 { background: var(--warn); }
+  .pw-rule .bar.on2 { background: var(--info); }
+  .pw-rule .bar.on3 { background: var(--accent); }
+
+  /* ============ 投资概览 ============ */
+  .seg { display: inline-flex; padding: 3px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; }
+  .seg button { border: 0; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-3);
+    height: 32px; padding: 0 14px; border-radius: 7px; cursor: pointer; }
+  .seg button.is-on { background: var(--surface); color: var(--text-1); box-shadow: var(--sh-1); }
+  .alloc-bar { display: flex; height: 8px; border-radius: 99px; overflow: hidden; margin-top: 12px; background: var(--surface-2); }
+  .alloc-bar i { display: block; height: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 11px; font-size: 11.5px; color: var(--text-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 8px; height: 8px; border-radius: 3px; }
+
+  /* ============ 决策收件箱 ============ */
+  .inbox { display: grid; grid-template-columns: 208px 1fr; gap: 16px; margin-top: 20px; align-items: start; }
+  .inbox-side { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--sh-card); padding: 8px; position: sticky; top: 86px; }
+  .inbox-side a { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px;
+    border-radius: 8px; font-size: 12.5px; color: var(--text-2); text-decoration: none; font-weight: 550; }
+  .inbox-side a .c { font-size: 11.5px; color: var(--text-3); }
+  .inbox-side a:hover { background: var(--surface-2); }
+  .inbox-side a.is-on { background: var(--accent-tint); color: var(--accent); }
+  .inbox-side a.is-on .c { color: var(--accent); font-weight: 700; }
+  .task-list { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--sh-card); overflow: hidden; }
+  .task { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border); }
+  .task:first-child { border-top: 0; }
+  .task:hover { background: var(--surface-2); }
+  .task .t-type { width: 104px; flex: 0 0 auto; font-size: 11px; font-weight: 650; color: var(--text-3); line-height: 1.5; }
+  .task .t-main { flex: 1; min-width: 0; }
+  .task .t-main h4 { font-size: 14px; font-weight: 650; }
+  .task .t-main p { margin-top: 3px; font-size: 12px; color: var(--text-3); }
+  .task .t-meta { display: flex; gap: 8px; margin-top: 8px; }
+  .task .t-go { font-size: 12.5px; font-weight: 620; color: var(--accent); text-decoration: none; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 5px; }
+  .task .t-due { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+
+  /* ============ 工具目录 ============ */
+  .tool-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+  .tool-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--sh-card); padding: 20px; display: flex; flex-direction: column; gap: 10px; transition: transform .15s, box-shadow .15s; }
+  .tool-card:hover { transform: translateY(-2px); box-shadow: var(--sh-md); border-color: var(--border-strong); }
+  .tool-card .tc-top { display: flex; align-items: center; justify-content: space-between; }
+  .tool-ico { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; }
+  .tool-card h4 { font-size: 14px; font-weight: 650; }
+  .tool-card p { font-size: 12px; color: var(--text-3); line-height: 1.65; flex: 1; }
+  .tool-card .tc-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
+  .star { color: var(--text-3); font-size: 15px; }
+  .star.on { color: #f5a623; }
+
+  /* ============ 自选股列表 ============ */
+  .quote-row { display: grid; grid-template-columns: 96px 1fr 110px 110px 96px 120px 24px; align-items: center; gap: 14px;
+    padding: 12px 20px; border-top: 1px solid var(--border); font-size: 12.5px; }
+  .quote-row:first-child { border-top: 0; }
+  .quote-row:hover { background: var(--surface-2); }
+  .quote-row > span:last-child { text-align: right; }
+  .quote-row .q-sym { font-weight: 700; font-size: 13px; }
+  .quote-row .q-sym small { display: block; font-size: 10.5px; color: var(--text-3); font-weight: 400; margin-top: 2px; }
+  .quote-row .q-note { color: var(--text-2); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .quote-row .q-price { text-align: right; font-weight: 650; }
+  .quote-row .q-chg { text-align: right; font-weight: 650; font-size: 12px; }
+  .q-up { color: var(--up); } .q-down { color: var(--down); } .q-flat { color: var(--text-3); }
+  .market-tabs { display: inline-flex; gap: 3px; padding: 3px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; }
+  .market-tabs button { height: 32px; padding: 0 14px; border-radius: 7px; border: 0;
+    background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-3); cursor: pointer; }
+  .market-tabs button.is-on { background: var(--surface); color: var(--text-1); box-shadow: var(--sh-1); }
+
+  /* ============ 个股详情 ============ */
+  .quote-head { display: flex; align-items: flex-start; gap: 16px; padding: 20px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--sh-card); }
+  .quote-head .qh-name h2 { font-size: 21px; font-weight: 680; letter-spacing: -.025em; }
+  .quote-head .qh-name p { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+  .quote-head .qh-price { margin-left: auto; text-align: right; }
+  .quote-head .qh-price .p { font-size: 30px; font-weight: 680; letter-spacing: -.03em; }
+  .quote-head .qh-price .c { font-size: 13px; font-weight: 650; margin-top: 2px; }
+  .detail-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 16px; margin-top: 16px; align-items: start; }
+  .kline { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--sh-card); overflow: hidden; }
+  .kline svg { display: block; width: 100%; }
+  .ma-legend { display: flex; gap: 16px; font-size: 11px; color: var(--text-3); }
+  .ma-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .ma-legend i { width: 14px; height: 2.5px; border-radius: 2px; }
+  .side-stack { display: grid; gap: 16px; }
+  .sig-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px dashed var(--border); font-size: 12.5px; }
+  .sig-row:first-of-type { border-top: 0; }
+  .sig-row .sig-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+  .sig-row .sig-k { color: var(--text-3); width: 78px; flex: 0 0 auto; font-size: 11.5px; }
+  .sig-row .sig-v { font-weight: 600; }
+  .sig-row .sig-v.muted { color: var(--text-2); font-weight: 500; }
+  .anchor-box { border: 1px solid var(--accent-tint-strong); background: var(--accent-tint);
+    border-radius: 10px; padding: 12px 16px; font-size: 12.5px; line-height: 1.7; color: var(--text-2); }
+  .anchor-box b { color: var(--text-1); }
+  .qlist { display: grid; gap: 12px; }
+  .qitem { display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; line-height: 1.6; color: var(--text-2);
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; background: var(--surface); }
+  .qitem .qi-state { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; flex: 0 0 auto; margin-top: 1px; }
+  .qi-open { color: var(--warn); background: var(--warn-tint); }
+  .qi-done { color: var(--ok); background: var(--ok-tint); }
+
+  /* ============ 研究笔记卡 ============ */
+  .note-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+  .note-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    box-shadow: var(--sh-card); display: flex; flex-direction: column; }
+  .note-card:hover { box-shadow: var(--sh-md); transform: translateY(-2px); transition: all .15s; }
+  .note-cover { height: 92px; padding: 14px 20px; display: flex; align-items: flex-start; gap: 8px; position: relative; }
+  .note-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .note-body h4 { font-size: 14px; font-weight: 650; line-height: 1.45; }
+  .note-body p { font-size: 12px; color: var(--text-3); line-height: 1.7; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .note-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .note-foot { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--text-3);
+    margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); }
+  .cover-chip { font-size: 10px; font-weight: 650; color: #fff; background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.22); padding: 3px 9px; border-radius: 999px; backdrop-filter: blur(4px); }
+  .cover-star { margin-left: auto; color: rgba(255,255,255,.85); font-size: 15px; }
+
+  /* ============ About 营销页 ============ */
+  .marketing { background: var(--page); }
+  .m-hero { position: relative; overflow: hidden; text-align: center; padding: 72px 32px 60px; }
+  .m-hero::before { content: ""; position: absolute; inset: 0;
+    background: radial-gradient(620px 340px at 50% -20%, var(--mesh-1), transparent 70%); }
+  .m-hero > * { position: relative; }
+  .m-hero h1 { font-size: 42px; line-height: 1.15; font-weight: 720; letter-spacing: -.04em; max-width: 640px; margin: 20px auto 0; }
+  .m-hero p { margin: 16px auto 0; max-width: 520px; font-size: 14.5px; color: var(--text-2); line-height: 1.8; }
+  .m-hero .m-cta { margin-top: 28px; display: flex; gap: 12px; justify-content: center; }
+  .m-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 10px 32px; }
+  .m-feature { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: var(--sh-card); }
+  .m-feature .mf-ico { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--accent-tint); color: var(--accent); margin-bottom: 14px; }
+  .m-feature h4 { font-size: 14.5px; font-weight: 650; }
+  .m-feature p { margin-top: 7px; font-size: 12.5px; color: var(--text-3); line-height: 1.7; }
+  .m-loop { margin: 32px 32px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: var(--sh-card); padding: 34px 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
+  .m-loop .step .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #fff;
+    display: grid; place-items: center; font-size: 13px; font-weight: 700; margin: 0 auto 12px; }
+  html[data-theme="dark"] .m-loop .step .n { color: #0a0d15; }
+  .m-loop .step h5 { font-size: 13.5px; font-weight: 650; }
+  .m-loop .step p { font-size: 11.5px; color: var(--text-3); margin-top: 5px; line-height: 1.6; }
+  .m-loop .arrow { display: none; }
+  .m-footer { margin-top: 40px; border-top: 1px solid var(--border); padding: 26px 32px;
+    display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--text-3); }
+
+  @media (max-width: 980px) {
+    .token-grid { grid-template-columns: 1fr; }
+    .login { grid-template-columns: 1fr; }
+    .login-mini { display: none; }
+    .stat-grid { grid-template-columns: repeat(2,1fr); }
+    .inbox { grid-template-columns: 1fr; }
+    .tool-grid, .note-grid, .m-features { grid-template-columns: 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .m-loop { grid-template-columns: 1fr 1fr; }
+    .quote-row { grid-template-columns: 80px 1fr 80px; }
+    .quote-row .q-hide { display: none; }
+  }
+</style>
+</head>
+<body data-preview>
+
+<!-- 预览控制条 -->
+<div class="preview-bar">
+  <strong>SeekCost 视觉重设计 · 设计稿 v1</strong>
+  <span class="tag">独立预览文件，未改动任何项目代码</span>
+  <span class="spacer"></span>
+  <div class="theme-toggle">
+    <button id="btn-light" class="is-on" onclick="setTheme('light')">亮色</button>
+    <button id="btn-dark" onclick="setTheme('dark')">深色</button>
+  </div>
+</div>
+
+<div class="stage">
+
+  <!-- ========== 1. 设计令牌 ========== -->
+  <div class="stage-label">
+    <h2>01 · 设计令牌</h2>
+    <span>颜色 / 字体 / 控件 — 全站一套变量，一处定义处处生效</span>
+  </div>
+
+  <div class="token-grid">
+    <div class="token-card">
+      <h3>品牌色 Indigo</h3>
+      <div class="swatch"><i style="background:#4f46e5"></i>主色 Primary<code>#4F46E5</code></div>
+      <div class="swatch"><i style="background:#4338ca"></i>悬停 Hover<code>#4338CA</code></div>
+      <div class="swatch"><i style="background:#6366f1"></i>亮版 Light<code>#6366F1</code></div>
+      <div class="swatch"><i style="background:rgba(79,70,229,.1)"></i>淡底 Tint<code>7–12%</code></div>
+      <h3 style="margin-top:20px">涨跌语义（红涨绿跌）</h3>
+      <div class="swatch"><i style="background:#e5484d"></i>上涨<code>#E5484D</code></div>
+      <div class="swatch"><i style="background:#0f9d58"></i>下跌<code>#0F9D58</code></div>
+    </div>
+
+    <div class="token-card">
+      <h3>中性色（亮色）</h3>
+      <div class="swatch"><i style="background:#f6f7fb;border-color:#e4e8f0"></i>页面底色<code>#F6F7FB</code></div>
+      <div class="swatch"><i style="background:#ffffff;border-color:#e4e8f0"></i>卡片表面<code>#FFFFFF</code></div>
+      <div class="swatch"><i style="background:#e4e8f0"></i>发丝边框<code>#E4E8F0</code></div>
+      <div class="swatch"><i style="background:#0c1322"></i>主要文字<code>#0C1322</code></div>
+      <div class="swatch"><i style="background:#4b5568"></i>次要文字<code>#4B5568</code></div>
+      <div class="swatch"><i style="background:#8a94a8"></i>弱化文字<code>#8A94A8</code></div>
+    </div>
+
+    <div class="token-card">
+      <h3>字号与数字</h3>
+      <div class="type-row"><span class="cap">Display</span><span class="h-xl">Trading setup</span></div>
+      <div class="type-row"><span class="cap">Title</span><span class="h-lg">All monitored symbols</span></div>
+      <div class="type-row"><span class="cap">Body</span><span class="t-body">One row per symbol，证据与数字对齐排版。</span></div>
+      <div class="type-row"><span class="cap">Number</span><span class="num t-money">354.97</span><span class="t-small">等宽数字 tabular-nums</span></div>
+    </div>
+  </div>
+
+  <div class="token-grid" style="margin-top:16px">
+    <div class="token-card">
+      <h3>按钮</h3>
+      <div class="btn-row">
+        <button class="btn btn-primary">Open watchlist</button>
+        <button class="btn btn-secondary">Refresh</button>
+        <button class="btn btn-ghost">Manage</button>
+      </div>
+      <h3 style="margin-top:20px">徽标</h3>
+      <div class="btn-row">
+        <span class="chip chip-indigo">Entry setup</span>
+        <span class="chip chip-neutral">Keep watching</span>
+        <span class="chip chip-warn">Extended</span>
+        <span class="chip chip-up">Risk</span>
+      </div>
+    </div>
+    <div class="token-card">
+      <h3>输入框</h3>
+      <div class="demo-stack">
+        <div class="field"><label>Username</label><input class="input" placeholder="Enter your username" /></div>
+        <div class="field"><label>Search</label><input class="input" placeholder="Search symbol or company" /></div>
+      </div>
+    </div>
+    <div class="token-card">
+      <h3>提示条</h3>
+      <div class="demo-stack">
+        <div class="notice notice-warn">⚠ The preview request timed out. You can retry.</div>
+        <div class="notice notice-info">ℹ Provisional context for the open session — 不改变已收盘的驾驶舱结论。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 2. 登录页 ========== -->
+  <div class="stage-label">
+    <h2>02 · 登录页</h2>
+    <span>左叙事 + 右表单；左侧用极淡的靛蓝/天蓝光晕替代大面积深色块，右侧纯白卡片配柔和投影</span>
+  </div>
+
+  <div class="browser">
+    <div class="browser-bar"><i></i><i></i><i></i><span class="browser-url">seekcost.app/login</span></div>
+    <div class="login">
+      <div class="login-aside">
+        <div class="brand">
+          <span class="logo">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" fill="currentColor" opacity=".25"/><path d="M12 2v20M4 7l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </span>
+          <span>SeekCost<small>PINE</small></span>
+        </div>
+
+        <div class="login-mini">
+          <div class="mn-head"><span>Watchlist · US</span><span class="chip chip-indigo">Live</span></div>
+          <div class="mn-row"><span class="mn-sym">DELL</span><span class="mn-bar"><i style="width:72%"></i></span><span class="mn-p num" style="color:var(--up)">+1.3%</span></div>
+          <div class="mn-row"><span class="mn-sym">NVDA</span><span class="mn-bar"><i style="width:64%"></i></span><span class="mn-p num" style="color:var(--up)">+3.8%</span></div>
+          <div class="mn-row"><span class="mn-sym">MSFT</span><span class="mn-bar"><i style="width:30%;background:var(--warn)"></i></span><span class="mn-p num" style="color:var(--warn)">+1.1%</span></div>
+          <div class="mn-row"><span class="mn-sym">IBM</span><span class="mn-bar"><i style="width:24%;background:var(--down)"></i></span><span class="mn-p num" style="color:var(--down)">−2.1%</span></div>
+        </div>
+
+        <div class="login-eyebrow">
+          <span class="eyebrow">Private by design</span>
+          <h2 class="login-title">Keep the reasoning.<br/>Review every trade.</h2>
+          <p class="login-copy">券商流水、持仓成本、盘前决策与复盘，沉淀在一个完全属于你的系统里。</p>
+          <div class="login-points">
+            <div class="login-point"><i>✓</i><span><b>Ledger</b>　自动归集成交流水与真实成本</span></div>
+            <div class="login-point"><i>✓</i><span><b>Decide</b>　每个判断都留下证据与理由</span></div>
+            <div class="login-point"><i>✓</i><span><b>Review</b>　可回看、可质疑、可迭代</span></div>
+        </div>
+        </div>
+      </div>
+
+      <div class="login-pane">
+        <div class="login-card">
+          <h1>Log in to SeekCost</h1>
+          <p class="sub">Return to your investment management and decision system</p>
+          <div class="login-form">
+            <div class="field"><label>Username</label><input class="input" placeholder="Enter your username" value="demo" /></div>
+            <div class="field"><label>Password</label><input class="input" type="password" placeholder="Enter your password" value="demo123" /></div>
+            <button class="btn btn-primary" style="height:42px;margin-top:4px">Log in</button>
+          </div>
+          <p class="login-foot">New to SeekCost? <a href="#">Create an account</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">设计要点：<b>品牌标识从「松树 PINE」保留但重做几何形态</b>，渐变靛蓝底；表单去掉厚重描边卡片，靠留白与投影分层；左侧浮动的迷你自选股卡让产品价值一目了然。</p>
+
+  <!-- ========== 3. 注册页 ========== -->
+  <div class="stage-label">
+    <h2>03 · 注册页</h2>
+    <span>与登录页同一套左右结构；左侧强调「私有 → 结构化 → 可复盘」的产品承诺，右侧表单含密码强度提示</span>
+  </div>
+  <div class="browser">
+    <div class="browser-bar"><i></i><i></i><i></i><span class="browser-url">seekcost.app/register</span></div>
+    <div class="login">
+      <div class="login-aside">
+        <div class="brand">
+          <span class="logo">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" fill="currentColor" opacity=".25"/><path d="M12 2v20M4 7l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </span>
+          <span>SeekCost<small>PINE</small></span>
+        </div>
+        <div class="login-eyebrow">
+          <span class="eyebrow">Your investment memory</span>
+          <h2 class="login-title" style="font-size:34px">Your decisions deserve<br/>a memory.</h2>
+          <p class="login-copy">把每一次研究、决策与复盘沉淀为只属于你的长期资产，而不是散落在聊天记录里的灵感。</p>
+          <div class="auth-path">
+            <span>Private 私有</span><i></i><span>Structured 结构化</span><i></i><span>Reviewable 可复盘</span>
+          </div>
+        </div>
+      </div>
+      <div class="login-pane">
+        <div class="login-card">
+          <h1>Create your account</h1>
+          <p class="sub">Start in seconds. Your data stays on your own server.</p>
+          <div class="login-form">
+            <div class="field"><label>Username</label><input class="input" placeholder="3–32 characters" /></div>
+            <div class="field"><label>Nickname <span style="color:var(--text-3);font-weight:400">(optional)</span></label><input class="input" placeholder="What should we call you?" /></div>
+            <div class="field">
+              <label>Password</label>
+              <input class="input" type="password" placeholder="At least 8 characters" value="seekcost2026" />
+              <div class="pw-rule"><span class="bar on1"></span><span class="bar on2"></span><span class="bar on3"></span><span style="margin-left:4px">Strong</span></div>
+            </div>
+            <div class="field"><label>Confirm password</label><input class="input" type="password" placeholder="Enter password again" value="seekcost2026" /></div>
+            <button class="btn btn-primary" style="height:42px;margin-top:4px">Create account</button>
+          </div>
+          <p class="login-foot">Already have an account? <a href="#">Log in</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">设计要点：注册与登录<b>共用视觉骨架</b>，降低认知成本；新增内联密码强度反馈（琥珀→蓝→靛蓝），不使用弹窗式校验。</p>
+
+  <!-- ========== 4. 应用内页 ========== -->
+  <div class="stage-label">
+    <h2>04 · 应用内页 · 工作台</h2>
+    <span>半透明毛玻璃导航、分段标签、白色卡片、发丝线表格；数字全部右对齐等宽，涨跌严格红绿</span>
+  </div>
+
+  <div class="browser">
+    <div class="browser-bar"><i></i><i></i><i></i><span class="browser-url">seekcost.app/</span></div>
+
+    <nav class="appnav">
+      <div class="brand">
+        <span class="logo">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" fill="currentColor" opacity=".25"/><path d="M12 2v20M4 7l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </span>
+        <span>SeekCost<small>PINE</small></span>
+      </div>
+      <div class="tabs">
+        <a href="#" class="is-on">Workbench</a><a href="#">Investments</a><a href="#">Decisions</a><a href="#">Tools</a>
+      </div>
+      <div class="appnav-right">
+        <span class="icon-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg>
+        </span>
+        <span class="icon-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        </span>
+        <span class="avatar">D</span>
+      </div>
+    </nav>
+
+    <div class="app-body">
+      <div class="page-head">
+        <div>
+          <h1>Trading setup cockpit</h1>
+          <p>Identify opportunities and risks from completed daily-bar evidence.</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary">Open watchlist</button>
+          <button class="btn btn-secondary">Refresh results</button>
+          <button class="btn btn-ghost">Manage strategies</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="s-top">Entry setup <span class="s-dot" style="background:var(--accent)"></span></div>
+          <div class="s-val num">1</div>
+          <div class="s-sub">Quiet pullback held</div>
+        </div>
+        <div class="stat">
+          <div class="s-top">Keep watching <span class="s-dot" style="background:var(--info)"></span></div>
+          <div class="s-val num">9</div>
+          <div class="s-sub">Trend intact, setup pending</div>
+        </div>
+        <div class="stat">
+          <div class="s-top">Extended <span class="s-dot" style="background:var(--warn)"></span></div>
+          <div class="s-val num">0</div>
+          <div class="s-sub">Stretched above MA</div>
+        </div>
+        <div class="stat">
+          <div class="s-top">Risk <span class="s-dot" style="background:var(--up)"></span></div>
+          <div class="s-val num">0</div>
+          <div class="s-sub">Trend warning</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>All monitored symbols</h3>
+          <span class="p-sub">One row per symbol, consolidating every enabled strategy's latest evidence.</span>
+          <div class="right">
+            <div class="search">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              Search symbol
+            </div>
+          </div>
+        </div>
+        <div class="filters">
+          <button class="is-on">All 10</button><button>Entry setup 1</button><button>Watching 9</button><button>Extended 0</button><button>Risk 0</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Symbol</th><th>Setup</th><th>Evidence</th><th class="r">Close</th><th class="r">Reference</th><th class="r">MA5</th><th class="r">Trend</th><th class="r"></th></tr>
+          </thead>
+          <tbody>
+            <tr class="is-hover">
+              <td><span class="sym">DELL</span><span class="sym-name">戴尔科技</span></td>
+              <td><span class="chip chip-indigo">Entry setup</span></td>
+              <td class="cell-note"><b>Quiet pullback</b> held near a rising MA5</td>
+              <td class="r num">575.31</td>
+              <td class="r num" style="color:var(--text-3)">567.71</td>
+              <td class="r num" style="color:var(--up)">+1.3%</td>
+              <td class="r"><svg class="spark" viewBox="0 0 76 26"><polyline points="0,20 12,17 24,18 36,12 48,13 60,7 76,5" fill="none" stroke="var(--up)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+              <td class="r" style="color:var(--text-3)">↗</td>
+            </tr>
+            <tr>
+              <td><span class="sym">GOOGL</span><span class="sym-name">谷歌-A</span></td>
+              <td><span class="chip chip-neutral">Keep watching</span></td>
+              <td class="cell-note">Trend intact, but the entry condition is incomplete</td>
+              <td class="r num">354.97</td>
+              <td class="r num" style="color:var(--text-3)">347.94</td>
+              <td class="r num" style="color:var(--up)">+2.0%</td>
+              <td class="r"><svg class="spark" viewBox="0 0 76 26"><polyline points="0,21 12,19 24,15 36,16 48,11 60,9 76,6" fill="none" stroke="var(--up)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+              <td class="r" style="color:var(--text-3)">↗</td>
+            </tr>
+            <tr>
+              <td><span class="sym">NVDA</span><span class="sym-name">英伟达</span></td>
+              <td><span class="chip chip-neutral">Keep watching</span></td>
+              <td class="cell-note">Trend intact, but the entry condition is incomplete</td>
+              <td class="r num">227.38</td>
+              <td class="r num" style="color:var(--text-3)">219.01</td>
+              <td class="r num" style="color:var(--up)">+3.8%</td>
+              <td class="r"><svg class="spark" viewBox="0 0 76 26"><polyline points="0,22 12,18 24,19 36,14 48,10 60,8 76,4" fill="none" stroke="var(--up)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+              <td class="r" style="color:var(--text-3)">↗</td>
+            </tr>
+            <tr>
+              <td><span class="sym">INTC</span><span class="sym-name">英特尔</span></td>
+              <td><span class="chip chip-neutral">Keep watching</span></td>
+              <td class="cell-note">Trend intact, extended <b>+13.3%</b> from MA5</td>
+              <td class="r num">121.78</td>
+              <td class="r num" style="color:var(--text-3)">107.47</td>
+              <td class="r num" style="color:var(--up)">+13.3%</td>
+              <td class="r"><svg class="spark" viewBox="0 0 76 26"><polyline points="0,23 12,20 24,16 36,12 48,8 60,5 76,3" fill="none" stroke="var(--warn)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+              <td class="r" style="color:var(--text-3)">↗</td>
+            </tr>
+            <tr>
+              <td><span class="sym">MSFT</span><span class="sym-name">微软</span></td>
+              <td><span class="chip chip-warn">Trend warning</span></td>
+              <td class="cell-note">Trend needs to repair before a new setup</td>
+              <td class="r num">501.61</td>
+              <td class="r num" style="color:var(--text-3)">496.11</td>
+              <td class="r num" style="color:var(--up)">+1.1%</td>
+              <td class="r"><svg class="spark" viewBox="0 0 76 26"><polyline points="0,8 12,10 24,9 36,13 48,12 60,15 76,14" fill="none" stroke="var(--warn)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+              <td class="r" style="color:var(--text-3)">↗</td>
+            </tr>
+            <tr>
+              <td><span class="sym">IBM</span><span class="sym-name">IBM Corp</span></td>
+              <td><span class="chip chip-warn">Trend warning</span></td>
+              <td class="cell-note">Trend needs to repair before a new setup</td>
+              <td class="r num">231.93</td>
+              <td class="r num" style="color:var(--text-3)">237.02</td>
+              <td class="r num" style="color:var(--down)">−2.1%</td>
+              <td class="r"><svg class="spark" viewBox="0 0 76 26"><polyline points="0,6 12,8 24,9 36,12 48,14 60,17 76,19" fill="none" stroke="var(--down)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+              <td class="r" style="color:var(--text-3)">↗</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note-strip">
+        <div class="notice notice-warn" style="align-items:center">⚠ The preview request timed out. You can retry.</div>
+        <div class="notice notice-info" style="align-items:center">ℹ Private · saved evidence only · Last evaluated Sep 23, 2026</div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">设计要点：<b>卡片不再出现深浅混搭</b>；状态徽标用「靛蓝/中性/琥珀/红」四级，避开红绿涨跌歧义；主按钮才用品牌色，其余控件保持安静，让数字和证据成为视觉主角。</p>
+
+  <!-- ========== 5. 投资概览 ========== -->
+  <div class="stage-label">
+    <h2>05 · 投资概览</h2>
+    <span>Investments · 统一浅色卡片；统计四宫格 + 资产配置条 + 持仓明细表（数字为设计示意）</span>
+  </div>
+  <div class="browser">
+    <div class="browser-bar"><i></i><i></i><i></i><span class="browser-url">seekcost.app/portfolio</span></div>
+    <nav class="appnav">
+      <div class="brand"><span class="logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" fill="currentColor" opacity=".25"/><path d="M12 2v20M4 7l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span>SeekCost<small>PINE</small></span></div>
+      <div class="tabs"><a href="#">Workbench</a><a href="#" class="is-on">Investments</a><a href="#">Decisions</a><a href="#">Tools</a></div>
+      <div class="appnav-right"><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg></span><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span><span class="avatar">D</span></div>
+    </nav>
+    <div class="subnav">
+      <a href="#" class="is-on">Investment overview</a><a href="#">Investment catalog</a><a href="#">Transactions</a><a href="#">IBKR import</a><a href="#">Personal finance</a>
+    </div>
+    <div class="app-body">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow" style="margin-bottom:10px">Investment system</div>
+          <h1>Investment overview</h1>
+          <p>Manage market assets, defensive holdings and investments in your own capabilities without forcing them into one accounting model.</p>
+        </div>
+        <div class="btn-row">
+          <div class="seg"><button class="is-on">CNY</button><button>USD</button></div>
+          <button class="btn btn-secondary">Investment catalog</button>
+          <button class="btn btn-primary">+ Add investment</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="s-top">Asset net worth</div>
+          <div class="s-val num">¥1,286,400</div>
+          <div class="s-sub">Approximately $179,200</div>
+        </div>
+        <div class="stat">
+          <div class="s-top">Market P&amp;L</div>
+          <div class="s-val num q-up">+¥86,400</div>
+          <div class="s-sub q-up num">+7.2% · realized + unrealized</div>
+        </div>
+        <div class="stat">
+          <div class="s-top">Capability spend</div>
+          <div class="s-val num">¥12,800</div>
+          <div class="s-sub">Courses, subscriptions and tools · YTD</div>
+        </div>
+        <div class="stat">
+          <div class="s-top">Investments tracked</div>
+          <div class="s-val num">14 <span style="font-size:14px;color:var(--text-3);font-weight:500">items</span></div>
+          <div class="s-sub">Across 5 investment families</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Asset allocation</h3>
+          <span class="p-sub">By current value · CNY</span>
+          <div class="right"><div class="seg"><button class="is-on">Current value</button><button>Cost basis</button></div></div>
+        </div>
+        <div style="padding:16px 20px">
+          <div class="alloc-bar">
+            <i style="width:46%;background:#4f46e5"></i>
+            <i style="width:22%;background:#38bdf8"></i>
+            <i style="width:14%;background:#8b5cf6"></i>
+            <i style="width:10%;background:#f59e0b"></i>
+            <i style="width:8%;background:#94a3b8"></i>
+          </div>
+          <div class="legend">
+            <span><i style="background:#4f46e5"></i>US equities 46%</span>
+            <span><i style="background:#38bdf8"></i>Index ETFs 22%</span>
+            <span><i style="background:#8b5cf6"></i>China A / HK 14%</span>
+            <span><i style="background:#f59e0b"></i>Defensive 10%</span>
+            <span><i style="background:#94a3b8"></i>Capability 8%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div><h3>Market investments</h3><span class="p-sub" style="display:block;margin-top:3px">Stocks and ETFs managed by quantity, cost, current value and decision P&amp;L.</span></div>
+          <div class="right"><label style="font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:7px"><input type="checkbox" checked style="accent-color:var(--accent)"> Hide zero positions</label></div>
+        </div>
+        <table>
+          <thead><tr><th>Investment</th><th class="r">Qty</th><th class="r">Avg cost</th><th class="r">Last</th><th class="r">Market value</th><th class="r">Unrealized</th><th class="r">Decision P&amp;L</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sym">NVDA</span><span class="sym-name">英伟达 · NASDAQ</span></td><td class="r num">120</td><td class="r num">118.40</td><td class="r num">227.38</td><td class="r num">$27,286</td><td class="r num q-up">+92.0%</td><td class="r num q-up">+$13,078</td></tr>
+            <tr><td><span class="sym">DELL</span><span class="sym-name">戴尔科技 · NYSE</span></td><td class="r num">200</td><td class="r num">512.10</td><td class="r num">575.31</td><td class="r num">$115,062</td><td class="r num q-up">+12.3%</td><td class="r num q-up">+$12,642</td></tr>
+            <tr><td><span class="sym">MSFT</span><span class="sym-name">微软 · NASDAQ</span></td><td class="r num">60</td><td class="r num">438.70</td><td class="r num">501.61</td><td class="r num">$30,097</td><td class="r num q-up">+14.3%</td><td class="r num q-up">+$3,775</td></tr>
+            <tr><td><span class="sym">IBM</span><span class="sym-name">IBM Corp · NYSE</span></td><td class="r num">100</td><td class="r num">244.20</td><td class="r num">231.93</td><td class="r num">$23,193</td><td class="r num q-down">−5.0%</td><td class="r num q-down">−$1,227</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <p class="caption">设计要点：<b>消除当前版本的深色统计卡</b>——所有容器统一为白底发丝线；汇总数字大号等宽，盈亏只用红绿语义；新增配置条让资产结构一眼可读（当前产品缺这一层）。</p>
+
+  <!-- ========== 6. 决策收件箱 ========== -->
+  <div class="stage-label">
+    <h2>06 · 决策收件箱</h2>
+    <span>Decisions · 待办驱动；左侧分类导航 + 右侧任务流，每条任务带类型、截止日与明确的下一步</span>
+  </div>
+  <div class="browser">
+    <div class="browser-bar"><i></i><i></i><i></i><span class="browser-url">seekcost.app/decision</span></div>
+    <nav class="appnav">
+      <div class="brand"><span class="logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" fill="currentColor" opacity=".25"/><path d="M12 2v20M4 7l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span>SeekCost<small>PINE</small></span></div>
+      <div class="tabs"><a href="#">Workbench</a><a href="#">Investments</a><a href="#" class="is-on">Decisions</a><a href="#">Tools</a></div>
+      <div class="appnav-right"><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg></span><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span><span class="avatar">D</span></div>
+    </nav>
+    <div class="subnav">
+      <a href="#" class="is-on">Decision overview</a><a href="#">Candidates</a><a href="#">Quant monitoring</a><a href="#">Custom alerts</a><a href="#">Earnings calendar</a><a href="#">Decision records</a><a href="#">Record decision</a>
+    </div>
+    <div class="app-body">
+      <div class="page-head" style="border-bottom:0;padding-bottom:0">
+        <div>
+          <h1>Decisions</h1>
+          <p>Check what needs attention. Record decisions. Review outcomes.</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary">Watchlist ↗</button>
+          <button class="btn btn-primary">Record decision</button>
+        </div>
+      </div>
+
+      <div class="under-tabs">
+        <button class="is-on">Pending<b>11</b></button>
+        <button>Records<b>6</b></button>
+        <button>Investment review</button>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;margin-top:20px">
+        <div class="search" style="flex:1;max-width:440px;width:auto;height:40px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          Search a company or decision…
+        </div>
+        <span style="margin-left:auto;font-size:12px;color:var(--text-3)">Updated 2 min ago · <a href="#" style="color:var(--accent);font-weight:600;text-decoration:none">Refresh</a></span>
+      </div>
+
+      <div class="inbox">
+        <div class="inbox-side">
+          <a href="#" class="is-on">All tasks<span class="c">11</span></a>
+          <a href="#">Price checks<span class="c">0</span></a>
+          <a href="#">Due reviews<span class="c">1</span></a>
+          <a href="#">Trade reviews<span class="c">0</span></a>
+          <a href="#">Active plans<span class="c">0</span></a>
+          <a href="#">Missing evidence<span class="c">10</span></a>
+        </div>
+        <div class="task-list">
+          <div class="task">
+            <div class="t-type">Due review<br/><span class="t-due">Due Sep 21</span></div>
+            <div class="t-main">
+              <h4>【演示】从这里开始：工作台体验指南 v1</h4>
+              <p>Guided onboarding note · review the evidence framework before the next session.</p>
+            </div>
+            <a href="#" class="t-go">Start review →</a>
+          </div>
+          <div class="task">
+            <div class="t-type">Missing<br/>evidence</div>
+            <div class="t-main">
+              <h4>NVDA · 英伟达</h4>
+              <p>Missing investment thesis and invalidation condition.</p>
+              <div class="t-meta"><span class="chip chip-indigo">Setup forming</span><span class="chip chip-up">MA5 +3.8%</span></div>
+            </div>
+            <a href="#" class="t-go">Complete decision →</a>
+          </div>
+          <div class="task">
+            <div class="t-type">Missing<br/>evidence</div>
+            <div class="t-main">
+              <h4>MSFT · 微软</h4>
+              <p>Missing investment thesis and invalidation condition.</p>
+              <div class="t-meta"><span class="chip chip-warn">Trend warning</span><span class="chip chip-up">MA5 +1.1%</span></div>
+            </div>
+            <a href="#" class="t-go">Complete decision →</a>
+          </div>
+          <div class="task">
+            <div class="t-type">Missing<br/>evidence</div>
+            <div class="t-main">
+              <h4>IBM · IBM Corp</h4>
+              <p>Missing investment thesis and invalidation condition.</p>
+              <div class="t-meta"><span class="chip chip-warn">Trend warning</span><span class="chip chip-down">MA5 −2.1%</span></div>
+            </div>
+            <a href="#" class="t-go">Complete decision →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">设计要点：任务类型用<b>小号中性文字</b>而非大色块；与标的相关的行情上下文（setup、MA5）以 chip 收进任务卡内；当前页左上角的红色「1 Issue」调试条在正式视觉中移除。</p>
+
+  <!-- ========== 7. 工具目录 ========== -->
+  <div class="stage-label">
+    <h2>07 · 工具目录</h2>
+    <span>Tools · 个人工具收藏库；分类筛选 chips + 工具卡片网格，图标用分类色系区分</span>
+  </div>
+  <div class="browser">
+    <div class="browser-bar"><i></i><i></i><i></i><span class="browser-url">seekcost.app/tools</span></div>
+    <nav class="appnav">
+      <div class="brand"><span class="logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" fill="currentColor" opacity=".25"/><path d="M12 2v20M4 7l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span>SeekCost<small>PINE</small></span></div>
+      <div class="tabs"><a href="#">Workbench</a><a href="#">Investments</a><a href="#">Decisions</a><a href="#" class="is-on">Tools</a></div>
+      <div class="appnav-right"><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg></span><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span><span class="avatar">D</span></div>
+    </nav>
+    <div class="app-body">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow" style="margin-bottom:10px">Investment tool directory</div>
+          <h1>Tools built for better investing</h1>
+          <p>Keep the small research, data, quant and automation products that make your own process sharper.</p>
+        </div>
+        <button class="btn btn-primary">+ Add tool</button>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:14px;margin-top:20px;flex-wrap:wrap">
+        <div class="search" style="flex:1;min-width:240px;max-width:420px;width:auto;height:40px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          Search tools, use cases or tags…
+        </div>
+        <label style="font-size:12.5px;color:var(--text-2);display:flex;align-items:center;gap:7px;margin-left:auto"><input type="checkbox" style="accent-color:var(--accent)"> Starred only</label>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap">
+        <span class="chip" style="height:28px;align-items:center;background:var(--text-1);color:var(--page)">All tools · 6</span>
+        <span class="chip chip-neutral" style="height:28px">Research · 2</span>
+        <span class="chip chip-neutral" style="height:28px">Market data · 1</span>
+        <span class="chip chip-neutral" style="height:28px">Quant · 1</span>
+        <span class="chip chip-neutral" style="height:28px">Automation · 1</span>
+        <span class="chip chip-neutral" style="height:28px">Journal · 1</span>
+      </div>
+
+      <div class="tool-grid">
+        <div class="tool-card">
+          <div class="tc-top">
+            <span class="tool-ico" style="background:rgba(56,189,248,.12);color:#0284c7">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 17l5-6 4 4 5-8 4 5"/><path d="M3 21h18"/></svg>
+            </span>
+            <span class="star on">★</span>
+          </div>
+          <h4>TradingView</h4>
+          <p>Charting, pine scripts and alerting across global markets. Primary technical workspace.</p>
+          <div class="tc-foot"><span class="chip chip-neutral">Market data</span><a href="#" class="t-go" style="font-size:12px;text-decoration:none">Open ↗</a></div>
+        </div>
+        <div class="tool-card">
+          <div class="tc-top">
+            <span class="tool-ico" style="background:rgba(79,70,229,.1);color:var(--accent)">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 19V5M4 19h16M8 16l4-5 3 3 5-7"/></svg>
+            </span>
+            <span class="star on">★</span>
+          </div>
+          <h4>Koyfin</h4>
+          <p>Macro dashboards, earnings transcripts and consensus data for fundamental cross-checks.</p>
+          <div class="tc-foot"><span class="chip chip-neutral">Research</span><a href="#" class="t-go" style="font-size:12px;text-decoration:none">Open ↗</a></div>
+        </div>
+        <div class="tool-card">
+          <div class="tc-top">
+            <span class="tool-ico" style="background:rgba(139,92,246,.12);color:#7c3aed">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/></svg>
+            </span>
+            <span class="star">★</span>
+          </div>
+          <h4>Backtest engine</h4>
+          <p>Self-hosted python runner for MA-pullback and breakout strategy validation on daily bars.</p>
+          <div class="tc-foot"><span class="chip chip-neutral">Quant</span><a href="#" class="t-go" style="font-size:12px;text-decoration:none">Open ↗</a></div>
+        </div>
+        <div class="tool-card">
+          <div class="tc-top">
+            <span class="tool-ico" style="background:var(--ok-tint);color:var(--ok)">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5"/></svg>
+            </span>
+            <span class="star">★</span>
+          </div>
+          <h4>Notion research wiki</h4>
+          <p>Long-form thesis drafts and source clipping before promoting notes into SeekCost.</p>
+          <div class="tc-foot"><span class="chip chip-neutral">Journal</span><a href="#" class="t-go" style="font-size:12px;text-decoration:none">Open ↗</a></div>
+        </div>
+        <div class="tool-card">
+          <div class="tc-top">
+            <span class="tool-ico" style="background:rgba(245,158,11,.12);color:#b45309">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 2a7 7 0 0 0-7 7c0 3 2 5 2 8h10c0-3 2-5 2-8a7 7 0 0 0-7-7z"/><path d="M9 20h6"/></svg>
+            </span>
+            <span class="star">★</span>
+          </div>
+          <h4>IBKR Gateway</h4>
+            <p>ib_insync automation for overnight order staging and filled-trade reconciliation.</p>
+          <div class="tc-foot"><span class="chip chip-neutral">Automation</span><a href="#" class="t-go" style="font-size:12px;text-decoration:none">Open ↗</a></div>
+        </div>
+        <div class="tool-card">
+          <div class="tc-top">
+            <span class="tool-ico" style="background:rgba(229,72,77,.1);color:var(--up)">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+            </span>
+            <span class="star on">★</span>
+          </div>
+          <h4>Earnings call Q&amp;A</h4>
+          <p>LLM workspace for transcript interrogation: guidance changes, margin drivers, contradictions.</p>
+          <div class="tc-foot"><span class="chip chip-neutral">Research</span><a href="#" class="t-go" style="font-size:12px;text-decoration:none">Open ↗</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">设计要点：分类 chips <b>选中态用黑底白字（深色下自动转靛蓝）</b>，避免再增加一个品牌绿色；工具图标按分类赋语义淡色；卡片 hover 微上浮，空状态时同一位置保留引导卡。</p>
+
+  <!-- ========== 8. 自选股列表 ========== -->
+  <div class="stage-label">
+    <h2>08 · 自选股 · 候选列表</h2>
+    <span>Candidates · 市场/行业筛选 + 紧凑行情行；信号用中性 chip，价格与涨跌幅严格等宽右对齐</span>
+  </div>
+  <div class="browser">
+    <div class="browser-bar"><i></i><i></i><i></i><span class="browser-url">seekcost.app/watchlist</span></div>
+    <nav class="appnav">
+      <div class="brand"><span class="logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" fill="currentColor" opacity=".25"/><path d="M12 2v20M4 7l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span>SeekCost<small>PINE</small></span></div>
+      <div class="tabs"><a href="#">Workbench</a><a href="#">Investments</a><a href="#" class="is-on">Decisions</a><a href="#">Tools</a></div>
+      <div class="appnav-right"><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg></span><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span><span class="avatar">D</span></div>
+    </nav>
+    <div class="subnav">
+      <a href="#">Decision overview</a><a href="#" class="is-on">Candidates</a><a href="#">Quant monitoring</a><a href="#">Custom alerts</a><a href="#">Earnings calendar</a><a href="#">Decision records</a><a href="#">Record decision</a>
+    </div>
+    <div class="app-body">
+      <div class="page-head">
+        <div>
+          <h1>Candidates</h1>
+          <p>One row per symbol, consolidating every enabled strategy's latest saved evidence.</p>
+        </div>
+        <div class="market-tabs">
+          <button class="is-on">All 10</button><button>US 10</button><button>China A 0</button><button>Hong Kong 0</button>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="filters">
+          <button class="is-on">All 10</button><button>Entry setup 1</button><button>Watching 9</button><button>Extended 0</button><button>Risk 0</button>
+          <span style="margin-left:auto;display:flex;gap:8px">
+            <button style="border:1px solid var(--border);color:var(--text-2);display:inline-flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5z"/></svg>Funnel</button>
+            <button style="border:1px solid var(--border);color:var(--text-2)">Industry ▾</button>
+          </span>
+        </div>
+        <div class="quote-row" style="background:var(--surface-2);font-size:11px;font-weight:600;color:var(--text-3)">
+          <span>Symbol</span><span>Latest evidence</span><span class="r" style="text-align:right">Close</span><span class="r q-hide" style="text-align:right">Reference</span><span class="r" style="text-align:right">MA5</span><span class="r q-hide" style="text-align:right">Trend</span><span></span>
+        </div>
+        <div class="quote-row" style="background:var(--accent-tint)">
+          <span class="q-sym">DELL<small>戴尔科技</small></span>
+          <span class="q-note"><span class="chip chip-indigo">Entry setup</span> &nbsp;Quiet pullback held near a rising MA5</span>
+          <span class="q-price num">575.31</span><span class="q-hide num" style="text-align:right;color:var(--text-3)">567.71</span>
+          <span class="q-chg num q-up">+1.3%</span>
+          <svg class="spark q-hide" viewBox="0 0 76 26"><polyline points="0,20 12,17 24,18 36,12 48,13 60,7 76,5" fill="none" stroke="var(--up)" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span style="color:var(--text-3)">›</span>
+        </div>
+        <div class="quote-row">
+          <span class="q-sym">GOOGL<small>谷歌-A</small></span>
+          <span class="q-note"><span class="chip chip-neutral">Watching</span> &nbsp;Trend intact, entry condition incomplete</span>
+          <span class="q-price num">354.97</span><span class="q-hide num" style="text-align:right;color:var(--text-3)">347.94</span>
+          <span class="q-chg num q-up">+2.0%</span>
+          <svg class="spark q-hide" viewBox="0 0 76 26"><polyline points="0,21 12,19 24,15 36,16 48,11 60,9 76,6" fill="none" stroke="var(--up)" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span style="color:var(--text-3)">›</span>
+        </div>
+        <div class="quote-row">
+          <span class="q-sym">AMZN<small>亚马逊</small></span>
+          <span class="q-note"><span class="chip chip-neutral">Watching</span> &nbsp;Trend intact, entry condition incomplete</span>
+          <span class="q-price num">258.45</span><span class="q-hide num" style="text-align:right;color:var(--text-3)">251.55</span>
+          <span class="q-chg num q-up">+2.7%</span>
+          <svg class="spark q-hide" viewBox="0 0 76 26"><polyline points="0,22 12,20 24,17 36,15 48,12 60,10 76,7" fill="none" stroke="var(--up)" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span style="color:var(--text-3)">›</span>
+        </div>
+        <div class="quote-row">
+          <span class="q-sym">NVDA<small>英伟达</small></span>
+          <span class="q-note"><span class="chip chip-neutral">Watching</span> &nbsp;Trend intact, entry condition incomplete</span>
+          <span class="q-price num">227.38</span><span class="q-hide num" style="text-align:right;color:var(--text-3)">219.01</span>
+          <span class="q-chg num q-up">+3.8%</span>
+          <svg class="spark q-hide" viewBox="0 0 76 26"><polyline points="0,22 12,18 24,19 36,14 48,10 60,8 76,4" fill="none" stroke="var(--up)" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span style="color:var(--text-3)">›</span>
+        </div>
+        <div class="quote-row">
+          <span class="q-sym">QCOM<small>高通</small></span>
+          <span class="q-note"><span class="chip chip-neutral">Watching</span> &nbsp;Trend intact, entry condition incomplete</span>
+          <span class="q-price num">194.23</span><span class="q-hide num" style="text-align:right;color:var(--text-3)">186.66</span>
+          <span class="q-chg num q-up">+4.1%</span>
+          <svg class="spark q-hide" viewBox="0 0 76 26"><polyline points="0,21 12,19 24,16 36,14 48,10 60,9 76,5" fill="none" stroke="var(--up)" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span style="color:var(--text-3)">›</span>
+        </div>
+        <div class="quote-row">
+          <span class="q-sym">INTC<small>英特尔</small></span>
+          <span class="q-note"><span class="chip chip-warn">Extended</span> &nbsp;Stretched +13.3% above MA5, chase risk elevated</span>
+          <span class="q-price num">121.78</span><span class="q-hide num" style="text-align:right;color:var(--text-3)">107.47</span>
+          <span class="q-chg num q-up">+13.3%</span>
+          <svg class="spark q-hide" viewBox="0 0 76 26"><polyline points="0,23 12,20 24,16 36,12 48,8 60,5 76,3" fill="none" stroke="var(--warn)" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span style="color:var(--text-3)">›</span>
+        </div>
+        <div class="quote-row">
+          <span class="q-sym">MSFT<small>微软</small></span>
+          <span class="q-note"><span class="chip chip-warn">Trend warning</span> &nbsp;Trend needs to repair before a new setup</span>
+          <span class="q-price num">501.61</span><span class="q-hide num" style="text-align:right;color:var(--text-3)">496.11</span>
+          <span class="q-chg num q-up">+1.1%</span>
+          <svg class="spark q-hide" viewBox="0 0 76 26"><polyline points="0,8 12,10 24,9 36,13 48,12 60,15 76,14" fill="none" stroke="var(--warn)" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span style="color:var(--text-3)">›</span>
+        </div>
+        <div class="quote-row">
+          <span class="q-sym">IBM<small>IBM Corp</small></span>
+          <span class="q-note"><span class="chip chip-warn">Trend warning</span> &nbsp;Trend needs to repair before a new setup</span>
+          <span class="q-price num">231.93</span><span class="q-hide num" style="text-align:right;color:var(--text-3)">237.02</span>
+          <span class="q-chg num q-down">−2.1%</span>
+          <svg class="spark q-hide" viewBox="0 0 76 26"><polyline points="0,6 12,8 24,9 36,12 48,14 60,17 76,19" fill="none" stroke="var(--down)" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span style="color:var(--text-3)">›</span>
+        </div>
+      </div>
+      <p class="caption" style="margin-top:10px">Private · saved evidence only · Last evaluated Sep 23, 2026, 12:44 AM</p>
+    </div>
+  </div>
+  <p class="caption">设计要点：比工作台更紧凑的<b>行情密度行</b>；Entry setup 行用极淡靛蓝底高亮（替代现在的绿色左边框）；超买状态用琥珀 chip 标记（INTC），趋势破坏用警告 chip，红绿严格只留给价格数字本身，迷你走势线统一用品牌靛蓝、不承担涨跌语义。</p>
+
+  <!-- ========== 9. 个股研究详情 ========== -->
+  <div class="stage-label">
+    <h2>09 · 个股研究详情</h2>
+    <span>Watchlist detail · 产品核心页；左 K 线+策略证据，右价格风险、决策锚点与待验证问题</span>
+  </div>
+  <div class="browser">
+    <div class="browser-bar"><i></i><i></i><i></i><span class="browser-url">seekcost.app/watchlist/NVDA</span></div>
+    <nav class="appnav">
+      <div class="brand"><span class="logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" fill="currentColor" opacity=".25"/><path d="M12 2v20M4 7l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span>SeekCost<small>PINE</small></span></div>
+      <div class="tabs"><a href="#">Workbench</a><a href="#">Investments</a><a href="#" class="is-on">Decisions</a><a href="#">Tools</a></div>
+      <div class="appnav-right"><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg></span><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span><span class="avatar">D</span></div>
+    </nav>
+    <div class="subnav">
+      <a href="#">Decision overview</a><a href="#" class="is-on">Candidates</a><a href="#">Quant monitoring</a><a href="#">Custom alerts</a><a href="#">Earnings calendar</a><a href="#">Decision records</a><a href="#">Record decision</a>
+    </div>
+    <div class="app-body">
+      <a href="#" style="font-size:12.5px;color:var(--text-3);text-decoration:none">‹ Back to candidates</a>
+
+      <div class="quote-head" style="margin-top:12px">
+        <div class="qh-name">
+          <h2>NVDA <span style="color:var(--text-3);font-weight:500">英伟达</span></h2>
+          <p>NASDAQ · US equity · Daily bars · Last updated Sep 24, 2026 4:00 PM ET</p>
+          <div style="margin-top:9px;display:flex;gap:7px">
+            <span class="chip chip-indigo">Entry setup forming</span><span class="chip chip-neutral">MA pullback strategy</span>
+          </div>
+        </div>
+        <div class="qh-price">
+          <div class="p num">227.38</div>
+          <div class="c q-up num">+8.24 (+3.76%) today</div>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div style="display:grid;gap:14px">
+          <div class="kline">
+            <div class="panel-head">
+              <h3>Daily K</h3><span class="p-sub">120 sessions</span>
+              <div class="right ma-legend">
+                <span><i style="background:#4f46e5"></i>MA5</span>
+                <span><i style="background:#38bdf8"></i>MA20</span>
+                <span><i style="background:#94a3b8"></i>MA60</span>
+              </div>
+            </div>
+            <div style="padding:8px 20px 8px">
+              <svg id="kchart" viewBox="0 0 700 264" preserveAspectRatio="none" style="height:240px"></svg>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Quant strategy evidence</h3><span class="p-sub">MA pullback · evaluated on completed bars</span></div>
+            <div style="padding:8px 20px 16px">
+              <div class="sig-row"><span class="sig-dot" style="background:var(--ok)"></span><span class="sig-k">Trend</span><span class="sig-v" style="color:var(--ok)">Uptrend intact</span><span style="margin-left:auto;font-size:11.5px;color:var(--text-3)">price &gt; MA20 &gt; MA60</span></div>
+              <div class="sig-row"><span class="sig-dot" style="background:var(--accent)"></span><span class="sig-k">MA5 distance</span><span class="sig-v q-up num">+3.8%</span><span style="margin-left:auto;font-size:11.5px;color:var(--text-3)">within pullback band</span></div>
+              <div class="sig-row"><span class="sig-dot" style="background:var(--ok)"></span><span class="sig-k">Pullback</span><span class="sig-v" style="color:var(--ok)">Quiet, low volume</span><span style="margin-left:auto;font-size:11.5px;color:var(--text-3)">2 of 3 criteria met</span></div>
+              <div class="sig-row"><span class="sig-dot" style="background:var(--warn)"></span><span class="sig-k">Breakout</span><span class="sig-v muted">Not yet confirmed</span><span style="margin-left:auto;font-size:11.5px;color:var(--text-3)">needs close &gt; 230.10</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-stack">
+          <div class="panel">
+            <div class="panel-head"><h3>Price &amp; risk</h3></div>
+            <div style="padding:8px 20px 16px">
+              <div class="sig-row"><span class="sig-k">Position</span><span class="sig-v muted">Not held</span><span style="margin-left:auto;font-size:11.5px"><a href="#" style="color:var(--accent);text-decoration:none;font-weight:600">Plan entry</a></span></div>
+              <div class="sig-row"><span class="sig-k">Reference</span><span class="sig-v num">219.01</span><span style="margin-left:auto;font-size:11.5px;color:var(--text-3)">MA5</span></div>
+              <div class="sig-row"><span class="sig-k">Buy zone</span><span class="sig-v num">219 – 224</span></div>
+              <div class="sig-row"><span class="sig-k">Invalidation</span><span class="sig-v num q-down">208.40</span><span style="margin-left:auto;font-size:11.5px;color:var(--text-3)">−4.8% from ref</span></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Decision anchors</h3><span class="chip chip-warn" style="margin-left:auto">2 missing</span></div>
+            <div style="padding:16px 20px;display:grid;gap:12px">
+              <div class="anchor-box"><b>Thesis · </b>AI accelerator demand cycle remains supply-constrained; quiet MA5 pullback in an established uptrend offers favorable entry R:R.</div>
+              <div class="qitem"><span class="qi-state qi-open">MISSING</span><span>Invalidation condition — define the price/evidence that proves the thesis wrong.</span></div>
+              <div class="qitem"><span class="qi-state qi-open">MISSING</span><span>Position plan — size, entry ladder and review date before order staging.</span></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Research questions</h3><span class="p-sub">Guided SOP</span></div>
+            <div style="padding:16px 20px">
+              <div class="qlist">
+                <div class="qitem"><span class="qi-state qi-done">DONE</span><span>Is the trend aligned across daily and weekly timeframes?</span></div>
+                <div class="qitem"><span class="qi-state qi-done">DONE</span><span>Has the pullback been quiet on declining volume?</span></div>
+                <div class="qitem"><span class="qi-state qi-open">OPEN</span><span>Does next-quarter guidance support current valuation?</span></div>
+                <div class="qitem"><span class="qi-state qi-open">OPEN</span><span>What would make me abandon the setup after entry?</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">设计要点：K 线区域在亮色下用<b>白底+细网格</b>，涨红跌绿蜡烛（此处为渲染示意）；右栏把产品差异化的「决策锚点 + 待验证问题」视觉上做成待办清单，缺失项明确标黄，引导补全证据而非直接下单。</p>
+
+  <!-- ========== 10. 研究笔记库 ========== -->
+  <div class="stage-label">
+    <h2>10 · 研究笔记库</h2>
+    <span>Research library · 卡片封面改用品牌色系；过滤维度保持现状，状态 chip 与全站统一</span>
+  </div>
+  <div class="browser">
+    <div class="browser-bar"><i></i><i></i><i></i><span class="browser-url">seekcost.app/notes</span></div>
+    <nav class="appnav">
+      <div class="brand"><span class="logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" fill="currentColor" opacity=".25"/><path d="M12 2v20M4 7l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span>SeekCost<small>PINE</small></span></div>
+      <div class="tabs"><a href="#">Workbench</a><a href="#">Investments</a><a href="#" class="is-on">Decisions</a><a href="#">Tools</a></div>
+      <div class="appnav-right"><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg></span><span class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span><span class="avatar">D</span></div>
+    </nav>
+    <div class="subnav">
+      <a href="#">Decision overview</a><a href="#">Candidates</a><a href="#">Quant monitoring</a><a href="#">Custom alerts</a><a href="#">Earnings calendar</a><a href="#" class="is-on">Decision records</a><a href="#">Record decision</a>
+    </div>
+    <div class="app-body">
+      <span class="chip chip-indigo">Private research space</span>
+      <div class="page-head" style="border-bottom:0;padding-bottom:0;margin-top:16px">
+        <div>
+          <h1>Research library</h1>
+          <p>Turn scattered clues into reviewable investment judgments. &nbsp;·&nbsp; <b style="color:var(--text-2)">6 items</b> · 0 updated today · 3 linked holdings</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary">Research topics</button>
+          <button class="btn btn-primary">+ New research</button>
+        </div>
+      </div>
+
+      <div class="search" style="margin-top:20px;max-width:none;width:100%;height:40px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        Search titles, body, symbols or tags…
+      </div>
+
+      <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap">
+        <span class="chip" style="height:28px;align-items:center;background:var(--text-1);color:var(--page)">All research · 6</span>
+        <span class="chip chip-neutral" style="height:28px">Starred · 1</span>
+        <span class="chip chip-neutral" style="height:28px">Needs validation · 1</span>
+        <span class="chip chip-neutral" style="height:28px">Due for review · 5</span>
+        <span class="chip chip-neutral" style="height:28px">Archived · 5</span>
+        <span class="chip chip-neutral" style="height:28px">Linked to holdings · 3</span>
+      </div>
+
+      <div class="note-grid">
+        <div class="note-card">
+          <div class="note-cover" style="background:linear-gradient(135deg,#312e81,#4f46e5)">
+            <span class="cover-chip">Trade review</span><span class="cover-chip">Archived</span><span class="cover-star">★</span>
+          </div>
+          <div class="note-body">
+            <h4>【演示】NVDA：一次部分卖出的复盘</h4>
+            <p>以下内容、价格锚点和交易均为虚构，只用于功能体验，不是投资建议。记录在 +92% 浮盈时减仓一半的理由与执行偏差……</p>
+            <div class="note-tags"><span class="chip chip-indigo">$NVDA</span><span class="chip chip-neutral">#虚构演示</span><span class="chip chip-neutral">#研究练习</span></div>
+            <div class="note-foot"><span>Updated 3 days ago</span><span>1 min read</span><span style="margin-left:auto">○ 0</span></div>
+          </div>
+        </div>
+        <div class="note-card">
+          <div class="note-cover" style="background:linear-gradient(135deg,#4c1d95,#7c3aed)">
+            <span class="cover-chip">Decision record</span><span class="cover-chip">Archived</span><span class="cover-star">★</span>
+          </div>
+          <div class="note-body">
+            <h4>【演示】AAPL：放弃一次加仓计划</h4>
+            <p>以下内容、价格锚点和交易均为虚构。估值已至区间上沿，风险回报比不支持继续加仓，记录放弃的理由以备复盘……</p>
+            <div class="note-tags"><span class="chip chip-indigo">$AAPL</span><span class="chip chip-neutral">#虚构演示</span><span class="chip chip-neutral">#研究练习</span></div>
+            <div class="note-foot"><span>Updated 3 days ago</span><span>1 min read</span><span style="margin-left:auto">○ 0</span></div>
+          </div>
+        </div>
+        <div class="note-card">
+          <div class="note-cover" style="background:linear-gradient(135deg,#155e75,#0891b2)">
+            <span class="cover-chip">Investment thesis</span><span class="cover-chip">Archived</span><span class="cover-star">★</span>
+          </div>
+          <div class="note-body">
+            <h4>【演示】指数配置：为什么先写预算</h4>
+            <p>以下内容均为虚构。在挑选标的之前先确定指数预算与再平衡规则，避免个股观点侵蚀资产配置纪律……</p>
+            <div class="note-tags"><span class="chip chip-neutral">#虚构演示</span><span class="chip chip-neutral">#研究练习</span></div>
+            <div class="note-foot"><span>Updated 3 days ago</span><span>1 min read</span><span style="margin-left:auto">○ 0</span></div>
+          </div>
+        </div>
+        <div class="note-card">
+          <div class="note-cover" style="background:linear-gradient(135deg,#92400e,#f59e0b)">
+            <span class="cover-chip">Quick research</span><span class="cover-chip">Needs validation</span><span class="cover-star" style="color:#fff">★</span>
+          </div>
+          <div class="note-body">
+            <h4>【演示】从这里开始：工作台体验指南 v1</h4>
+            <p>引导式上手笔记：认识驾驶舱信号、补全决策锚点、完成第一次复盘。页面另行获取的行情可能是真实外部数据……</p>
+            <div class="note-tags"><span class="chip chip-warn">Due review</span><span class="chip chip-neutral">#研究练习</span></div>
+            <div class="note-foot"><span>Updated 5 days ago</span><span>1 min read</span><span style="margin-left:auto">○ 0</span></div>
+          </div>
+        </div>
+        <div class="note-card">
+          <div class="note-cover" style="background:linear-gradient(135deg,#1e3a8a,#3b82f6)">
+            <span class="cover-chip">Company research</span><span class="cover-chip">Archived</span><span class="cover-star">★</span>
+          </div>
+          <div class="note-body">
+            <h4>【演示】MSFT：订阅业务研究模板</h4>
+            <p>云与订阅收入的跟踪框架：续约率、席位扩张、资本开支节奏，以及财报季需要验证的三个假设……</p>
+            <div class="note-tags"><span class="chip chip-indigo">$MSFT</span><span class="chip chip-neutral">#虚构演示</span></div>
+            <div class="note-foot"><span>Updated 3 days ago</span><span>1 min read</span><span style="margin-left:auto">○ 0</span></div>
+          </div>
+        </div>
+        <div class="note-card">
+          <div class="note-cover" style="background:linear-gradient(135deg,#134e4a,#0d9488)">
+            <span class="cover-chip">Company research</span><span class="cover-chip">Archived</span><span class="cover-star">★</span>
+          </div>
+          <div class="note-body">
+            <h4>【演示】NVDA：把关注拆成三个待验证问题</h4>
+            <p>数据中心需求持续性、供给恢复节奏、客户自研芯片替代——每个问题预设验证数据与时间点……</p>
+            <div class="note-tags"><span class="chip chip-indigo">$NVDA</span><span class="chip chip-neutral">#虚构演示</span></div>
+            <div class="note-foot"><span>Updated 3 days ago</span><span>1 min read</span><span style="margin-left:auto">○ 0</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">设计要点：封面由现在的<b>纯深色块改为品牌色系渐变</b>（靛蓝/紫/青/琥珀），玻璃质感 chip 保持可读；Needs validation 卡片用琥珀封面提示需要行动；$标的 标签统一为靛蓝。</p>
+
+  <!-- ========== 11. About ========== -->
+  <div class="stage-label">
+    <h2>11 · 关于页（公开站）</h2>
+    <span>About · 未登录访客看到的门面；与登录页同一光晕语言，替代当前暖米色编辑风，统一品牌印象</span>
+  </div>
+  <div class="browser">
+    <div class="browser-bar"><i></i><i></i><i></i><span class="browser-url">seekcost.app/about</span></div>
+    <div class="marketing">
+      <nav class="appnav">
+        <div class="brand"><span class="logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" fill="currentColor" opacity=".25"/><path d="M12 2v20M4 7l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span>SeekCost<small>PINE</small></span></div>
+        <div class="appnav-right">
+          <a href="#" style="font-size:12.5px;color:var(--text-2);text-decoration:none;font-weight:550">About</a>
+          <a href="#" style="font-size:12.5px;color:var(--text-2);text-decoration:none;font-weight:550">User guide</a>
+          <button class="btn btn-secondary btn-sm">Log in</button>
+        </div>
+      </nav>
+
+      <div class="m-hero">
+        <span class="eyebrow">Private by design</span>
+        <h1>Keep the reasoning.<br/>Review every trade.</h1>
+        <p>Brokerage ledger, portfolio cost, pre-trade decisions and reviews — in one private system that belongs to you, not a feed.</p>
+        <div class="m-cta">
+          <button class="btn btn-primary" style="height:42px;padding:0 22px">Create your account</button>
+          <button class="btn btn-secondary" style="height:42px;padding:0 22px">Read the user guide</button>
+        </div>
+      </div>
+
+      <div class="m-features">
+        <div class="m-feature">
+          <span class="mf-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <h4>Private ledger</h4>
+          <p>Brokerage fills reconcile into true position cost automatically. Your data stays on your own deployment.</p>
+        </div>
+        <div class="m-feature">
+          <span class="mf-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11"/></svg></span>
+          <h4>Evidence-based decisions</h4>
+          <p>Every setup carries thesis, invalidation and position plan. The cockpit only reads completed-bar evidence.</p>
+        </div>
+        <div class="m-feature">
+          <span class="mf-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></span>
+          <h4>Reviewable outcomes</h4>
+          <p>Decision records turn past calls into feedback. Compare what you believed then with what happened next.</p>
+        </div>
+      </div>
+
+      <div class="m-loop">
+        <div class="step"><span class="n">1</span><h5>Ledger</h5><p>Import fills, reconcile true cost</p></div>
+        <div class="step"><span class="n">2</span><h5>Thesis</h5><p>State the view and what disproves it</p></div>
+        <div class="step"><span class="n">3</span><h5>Decide</h5><p>Size and stage the plan</p></div>
+        <div class="step"><span class="n">4</span><h5>Review</h5><p>Close the loop, improve next time</p></div>
+      </div>
+
+      <div class="m-footer">
+        <div class="brand" style="font-size:13px"><span class="logo" style="width:26px;height:26px;border-radius:7px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" fill="currentColor" opacity=".25"/><path d="M12 2v20M4 7l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span>SeekCost<small>PINE</small></span></div>
+        <span>© 2026 SeekCost</span>
+        <span style="margin-left:auto">About</span><span>User guide</span><span>Private by design</span>
+      </div>
+    </div>
+  </div>
+  <p class="caption">设计要点：公开页与应用内<b>共享同一套颜色、圆角与光晕</b>，访客登录后无视觉断层；四步闭环（Ledger → Thesis → Decide → Review）把产品方法论直接变成营销叙事。</p>
+
+</div>
+
+<script>
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    document.getElementById('btn-light').classList.toggle('is-on', t === 'light');
+    document.getElementById('btn-dark').classList.toggle('is-on', t === 'dark');
+    drawK(t);
+  }
+
+  // 确定性伪随机，生成一段先震荡后拉升、末尾缩量回踩的日线
+  function genSeries(n) {
+    let seed = 42;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const out = [];
+    let price = 138;
+    for (let i = 0; i < n; i++) {
+      const drift = i < n * 0.35 ? 0.15 : i < n * 0.75 ? 1.15 : 0.55;
+      const o = price;
+      const c = Math.max(60, o + (rnd() - 0.42) * 5.2 + drift);
+      const h = Math.max(o, c) + rnd() * 2.4;
+      const l = Math.min(o, c) - rnd() * 2.4;
+      out.push({ o, h, l, c });
+      price = c;
+    }
+    // 末尾几根做成安静回踩
+    for (let i = n - 4; i < n; i++) {
+      out[i].c = out[i].o - (rnd() * 2.2 + 0.4);
+      out[i].l = Math.min(out[i].l, out[i].c - 0.6);
+    }
+    return out;
+  }
+
+  function ma(data, period) {
+    return data.map((_, i) => {
+      if (i < period - 1) return null;
+      let s = 0;
+      for (let j = i - period + 1; j <= i; j++) s += data[j].c;
+      return s / period;
+    });
+  }
+
+  function drawK(theme) {
+    const svg = document.getElementById('kchart');
+    if (!svg) return;
+    const W = 700, H = 264, pad = 8;
+    const data = genSeries(52);
+    const ma5 = ma(data, 5), ma20 = ma(data, 20), ma60 = ma(data, 60);
+    let lo = Infinity, hi = -Infinity;
+    data.forEach(d => { lo = Math.min(lo, d.l); hi = Math.max(hi, d.h); });
+    const y = v => pad + (1 - (v - lo) / (hi - lo)) * (H - pad * 2);
+    const cw = (W - pad * 2) / data.length;
+    const up = theme === 'dark' ? '#f26d72' : '#e5484d';
+    const down = theme === 'dark' ? '#34d399' : '#0f9d58';
+    const grid = theme === 'dark' ? 'rgba(148,163,184,.08)' : 'rgba(16,24,40,.05)';
+    const axis = theme === 'dark' ? '#4b556f' : '#c3cadb';
+
+    let html = '';
+    for (let g = 1; g < 5; g++) {
+      const gy = pad + g * (H - pad * 2) / 5;
+      html += `<line x1="${pad}" y1="${gy}" x2="${W - pad}" y2="${gy}" stroke="${grid}" stroke-width="1"/>`;
+    }
+    const line = (arr, color) => {
+      const pts = arr.map((v, i) => v == null ? null : `${(pad + i * cw + cw / 2).toFixed(1)},${y(v).toFixed(1)}`).filter(Boolean);
+      return `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    };
+    data.forEach((d, i) => {
+      const x = pad + i * cw + cw / 2;
+      const rise = d.c >= d.o;
+      const col = rise ? up : down;
+      const top = y(Math.max(d.o, d.c)), hgt = Math.max(1.5, Math.abs(y(d.o) - y(d.c)));
+      html += `<line x1="${x.toFixed(1)}" y1="${y(d.h).toFixed(1)}" x2="${x.toFixed(1)}" y2="${y(d.l).toFixed(1)}" stroke="${col}" stroke-width="1"/>`;
+      html += `<rect x="${(x - cw * 0.3).toFixed(1)}" y="${top.toFixed(1)}" width="${(cw * 0.6).toFixed(1)}" height="${hgt.toFixed(1)}" fill="${col}" rx="0.6"/>`;
+    });
+    html += line(ma60, axis);
+    html += line(ma20, '#38bdf8');
+    html += line(ma5, '#4f46e5');
+    svg.innerHTML = html;
+  }
+
+  drawK('light');
+</script>
+</body>
+</html>

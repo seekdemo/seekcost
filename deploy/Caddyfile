@@ -1,0 +1,13 @@
+# Host-installed Caddy. Set SEEKCOST_DOMAIN to your own hostname (DNS must resolve).
+{$SEEKCOST_DOMAIN} {
+    encode zstd gzip
+    request_body {
+        max_size 20MB
+    }
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+        X-Frame-Options DENY
+    }
+    reverse_proxy 127.0.0.1:3000
+}

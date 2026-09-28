@@ -1,0 +1,144 @@
+# ============================
+# Python - Backend
+# ============================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+/lib/
+/lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+
+# pip
+*.log
+*.pot
+
+# ============================
+# Node.js - Frontend
+# ============================
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Testing
+/coverage
+playwright-report/
+test-results/
+
+# ============================
+# IDE & OS
+# ============================
+.DS_Store
+Thumbs.db
+*.pem
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ============================
+# Environment & Secrets
+# ============================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.production.local
+
+# ============================
+# Logs & Debug
+# ============================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ============================
+# Build & Cache
+# ============================
+*.tsbuildinfo
+next-env.d.ts
+
+# Python cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Frontend build
+.next/
+.vercel
+
+# ============================
+# Project Specific
+# ============================
+# Local agent/editor planning artifacts
+.agents/
+.codex/
+.joycode/
+.superpowers/
+
+# Database
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+backend/mvenv/
+
+# Personal imports, exports, and uploaded files
+example_data/
+imports/
+exports/
+uploads/
+*.csv
+*.tsv
+*.xlsx
+*.xls
+
+# Test files
+backend/test_*.py
+backend/test_*.sh
+
+# Temporary files
+*.tmp
+*.bak
+
+# Self-hosted credentials and encrypted backup repositories
+deploy/secrets/
+backups/
+*.dump
+backend/data/
+backend/backups/

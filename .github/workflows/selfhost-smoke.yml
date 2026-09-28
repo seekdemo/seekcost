@@ -1,0 +1,63 @@
+name: Self-hosted recovery smoke test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - compose.yaml
+      - deploy/**
+      - scripts/selfhost-init.py
+      - backend/**
+      - frontend/Dockerfile
+      - frontend/next.config.ts
+      - .github/workflows/selfhost-smoke.yml
+
+permissions:
+  contents: read
+
+jobs:
+  recover-synthetic-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      COMPOSE_PROJECT_NAME: seekcost-ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate isolated credentials
+        run: python3 scripts/selfhost-init.py
+      - name: Validate and build
+        run: |
+          docker compose config --quiet
+          docker compose build
+      - name: Start and check readiness
+        run: |
+          docker compose up -d
+          timeout 180 bash -c 'until curl -fsS http://127.0.0.1:3000/api/v1/auth/registration; do sleep 3; done'
+          test "$(curl -fsS http://127.0.0.1:3000/api/v1/auth/registration | jq -r .enabled)" = false
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' --data '{"username":"ci_outsider","password":"synthetic-only-password"}' http://127.0.0.1:3000/api/v1/auth/register)" = 403
+          docker compose exec -T db psql -U seekcost_admin -d seekcost -Atc "SELECT rolsuper FROM pg_roles WHERE rolname='seekcost'" | grep -qx f
+      - name: Back up and restore synthetic evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose stop backup
+          docker compose exec -T db psql -U seekcost_admin -d seekcost -v ON_ERROR_STOP=1 -c "CREATE TABLE recovery_probe (value text); INSERT INTO recovery_probe VALUES ('synthetic-recovery-proof');"
+          docker compose run --rm --no-deps backup bash /scripts/backup.sh once
+          docker compose run --rm --no-deps backup bash /scripts/health.sh
+          snapshot=$(docker compose run --rm --no-deps backup sh -c 'sed -n "2p" /backups/.seekcost-success')
+          docker compose run --rm --no-deps backup restic check --read-data
+          docker compose run --rm --no-deps backup bash /scripts/restore.sh "$snapshot" seekcost_restore_ci
+          docker compose exec -T db psql -U seekcost_admin -d seekcost_restore_ci -Atc 'SELECT value FROM recovery_probe' | grep -qx synthetic-recovery-proof
+          docker compose exec -T db psql -U seekcost_admin -d seekcost -Atc 'SELECT value FROM recovery_probe' | grep -qx synthetic-recovery-proof
+          if docker compose run --rm --no-deps backup bash /scripts/restore.sh "$snapshot" seekcost; then
+            echo 'ERROR: restore accepted live database' >&2
+            exit 1
+          fi
+      - name: Diagnostics (no environment dump or database artifacts)
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --tail=60 migrate backend frontend backup
+      - name: Stop isolated CI services
+        if: always()
+        run: docker compose down

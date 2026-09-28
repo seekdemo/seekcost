@@ -1,0 +1,66 @@
+/* Editorial About presentation, shared by the public page and CMS preview. */
+.about-editorial.page-shell { max-width: 1220px; }
+.about-editorial.product-info-page { gap: 64px; }
+.about-editorial .product-info-nav { padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+.about-story { min-width: 0; overflow-wrap: anywhere; }
+.about-story .about-kicker { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--accent); font: 600 11px/1.6 ui-monospace, SFMono-Regular, monospace; letter-spacing: .16em; }
+.about-kicker > span { height: 6px; width: 6px; border-radius: 50%; background: var(--accent); }
+.about-hero { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: clamp(28px,5vw,72px); align-items: center; padding: 20px 0 72px; }
+.about-hero h1 { max-width: 800px; margin: 26px 0 24px; color: var(--text-primary); font-size: clamp(36px,4.5vw,62px); font-weight: 620; letter-spacing: -.055em; line-height: 1.19; text-wrap: balance; }
+.about-hero__intro { max-width: 620px; color: var(--text-secondary); font-size: 15px; line-height: 1.95; }
+.about-title-phrase { display: block; text-wrap: initial; }
+.about-hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 32px; }
+.about-hero__actions a { display: inline-flex; align-items: center; justify-content: space-between; gap: 22px; min-height: 46px; padding: 12px 18px; border-radius: 8px; font-size: 13px; color: var(--text-secondary); transition: background .16s, color .16s; }
+.about-hero__actions a:first-child { background: var(--accent); color: var(--text-on-accent); font-weight: 650; }
+.about-hero__actions a:hover { box-shadow: 0 0 0 2px var(--accent-bg-hover); }
+.about-hero__actions a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.about-compass { position: relative; overflow: hidden; border: 1px solid color-mix(in srgb,var(--accent) 24%,var(--border)); border-radius: 16px; padding: 28px; background: radial-gradient(ellipse at 100% 0%,var(--accent-bg-hover),transparent 75%),var(--surface); box-shadow: 0 24px 65px -40px var(--accent-bg-hover); }
+.about-compass__top { display: flex; justify-content: space-between; align-items: center; font: 10px ui-monospace,monospace; letter-spacing: .13em; color: var(--text-secondary); }
+.about-compass__top span:last-child { color: var(--accent); font-size: 32px; line-height: 1; }
+.about-compass__title { margin-top: 34px; white-space: pre-line; font-size: clamp(21px,2vw,27px); line-height: 1.5; letter-spacing: -.025em; color: var(--text-primary); }
+.about-compass ol { list-style: none; padding: 0; margin: 25px 0 0; }
+.about-compass li { display: flex; align-items: center; gap: 17px; padding: 14px 0; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; }
+.about-compass li span { color: var(--accent); font: 11px ui-monospace,monospace; }
+.about-compass__foot { padding-top: 20px; margin: 0; font-size: 11px; color: var(--text-muted); }
+.about-section-heading h2 { white-space: pre-line; margin-top: 17px; font-size: clamp(26px,3vw,36px); font-weight: 570; letter-spacing: -.04em; line-height: 1.4; color: var(--text-primary); }
+.about-margin-note { margin-top: 20px; color: var(--text-muted); font-size: 12px; }
+.about-mission, .about-roadmap { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.5fr); gap: clamp(28px,5vw,72px); padding: 64px 0; border-top: 1px solid var(--border); scroll-margin-top: calc(var(--app-nav-height,64px) + 24px); }
+.about-mission__prose p { color: var(--text-secondary); font-size: 15px; line-height: 2; white-space: pre-wrap; margin: 0 0 20px; }
+.about-mission__prose p:last-child { padding-left: 22px; border-left: 2px solid var(--accent); color: var(--text-primary); margin-bottom: 0; }
+.about-values { padding: 56px 0 64px; border-top: 1px solid var(--border); }
+.about-values__grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin-top: 32px; }
+.about-value { min-width: 0; display: flex; gap: 22px; align-items: flex-start; border: 1px solid var(--border); border-radius: 12px; padding: 28px; background: var(--surface); }
+.about-value__number { flex-shrink: 0; white-space: nowrap; color: var(--accent); font: 13px/1.7 ui-monospace,monospace; }
+.about-story h3 { color: var(--text-primary); font-size: 17px; line-height: 1.6; letter-spacing: -.02em; font-weight: 600; }
+.about-value p, .about-roadmap__list p { margin-top: 9px; color: var(--text-secondary); font-size: 14px; line-height: 1.9; white-space: pre-wrap; }
+.about-value p:first-child, .about-roadmap__list p:first-child { margin-top: 0; }
+.about-roadmap__badge { display: inline-flex; margin-top: 24px; border: 1px solid var(--border); border-radius: 100px; padding: 7px 12px; color: var(--text-secondary); font-size: 11px; }
+.about-roadmap__list { list-style: none; padding: 0; margin: 0; }
+.about-roadmap__list li { position: relative; border-left: 1px solid var(--border); padding: 0 0 30px 28px; margin-left: 5px; }
+.about-roadmap__list li:last-child { padding-bottom: 0; }
+.about-roadmap__dot { position: absolute; left: -5px; top: 8px; width: 9px; height: 9px; background: var(--page-bg); border: 2px solid var(--accent); border-radius: 50%; }
+.about-editorial .about-support { border-top: 1px solid var(--border); padding-top: 42px; }
+.about-editorial .product-info-loop { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 0; margin-top: 24px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.about-editorial .product-info-loop__stage { display: block; padding: 24px; border: 0; border-right: 1px solid var(--border); border-radius: 0; background: transparent; }
+.about-editorial .product-info-loop__stage:last-child { border-right: 0; }
+.about-editorial .product-info-loop__number { display: block; margin-bottom: 20px; color: var(--accent); }
+.about-editorial .product-info-boundaries .ui-surface { padding: 24px; background: transparent; }
+.about-editorial .product-info-version { background: transparent; border: 0; border-top: 1px solid var(--border); border-radius: 0; padding: 24px 0 0; }
+.about-editorial .product-info-actions { padding-bottom: 16px; }
+@media (max-width: 760px) {
+  .about-editorial.product-info-page { gap: 40px; }
+  .about-hero { grid-template-columns: 1fr; padding: 0 0 40px; gap: 30px; }
+  .about-hero h1 { font-size: clamp(34px,7vw,48px); margin-top: 20px; }
+  .about-hero__intro { font-size: 14px; line-height: 1.9; }
+  .about-compass { padding: 24px; }
+  .about-compass__title { margin-top: 22px; }
+  .about-mission, .about-roadmap { grid-template-columns: 1fr; padding: 40px 0; gap: 24px; }
+  .about-values { padding: 40px 0; }
+  .about-values__grid { grid-template-columns: 1fr; margin-top: 24px; gap: 12px; }
+  .about-value { padding: 22px; gap: 16px; }
+  .about-mission__prose p { font-size: 14px; }
+  .about-editorial .product-info-loop { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .about-editorial .product-info-loop__stage { padding: 20px; border-bottom: 1px solid var(--border); }
+  .about-editorial .product-info-loop__stage:nth-child(even) { border-right: 0; }
+  .about-editorial .product-info-loop__stage:nth-last-child(-n+2) { border-bottom: 0; }
+}

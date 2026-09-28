@@ -1,0 +1,115 @@
+name: seekcost
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-api-env: &api-env
+  APP_ENV: production
+  SECRET_KEY: ${SECRET_KEY:?Run python3 scripts/selfhost-init.py first}
+  DATABASE_URL: postgresql+asyncpg://seekcost:${APP_DB_PASSWORD:?Initialize credentials first}@db:5432/seekcost
+  CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000"]}
+  SQL_ECHO: "false"
+  ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}
+
+services:
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: seekcost_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Initialize credentials first}
+      POSTGRES_DB: seekcost
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Initialize credentials first}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/db-init.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seekcost_admin -d seekcost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  migrate:
+    build: ./backend
+    environment: *api-env
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    logging: *logging
+
+  backend:
+    build: ./backend
+    environment: *api-env
+    restart: unless-stopped
+    init: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health/ready', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    logging: *logging
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    logging: *logging
+
+  backup:
+    build: ./deploy/backup
+    restart: unless-stopped
+    init: true
+    environment:
+      PGHOST: db
+      PGUSER: seekcost_admin
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Initialize credentials first}
+      PGDATABASE: seekcost
+      RESTIC_REPOSITORY: /backups
+      RESTIC_PASSWORD_FILE: /run/secrets/backup_password
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      OFFSITE_REPOSITORY: ${OFFSITE_REPOSITORY:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-}
+      BACKUP_WEBHOOK_URL: ${BACKUP_WEBHOOK_URL:-}
+    volumes:
+      - ${BACKUP_DIR:-./backups}:/backups
+    secrets:
+      - backup_password
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "/scripts/health.sh"]
+      interval: 60s
+      timeout: 10s
+      retries: 1
+      start_period: 5m
+    logging: *logging
+
+secrets:
+  backup_password:
+    file: ./deploy/secrets/backup-password
+
+volumes:
+  postgres_data:
