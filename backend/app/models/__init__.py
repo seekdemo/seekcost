@@ -4,6 +4,7 @@ from app.models.site_content import SiteAdmin, SiteContent, ContentAudit
 from app.models.custom_alert import AlertRule, AlertNotification, AlertRuleState
 from app.models.asset import Asset
 from app.models.transaction import Transaction
+from app.models.sell_batch_item import SellBatchItem
 from app.models.profit_allocation import ProfitAllocation
 from app.models.harbor import Harbor
 from app.models.liability import Liability

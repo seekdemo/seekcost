@@ -12,6 +12,7 @@ from app.core.database import async_session
 from app.core.security import hash_password
 from app.models.user import User
 from app.models.site_content import SiteAdmin, ContentAudit
+import app.models  # noqa: F401 - register relationship targets in a fresh CLI process
 
 
 async def create_owner(username: str, password: str):
