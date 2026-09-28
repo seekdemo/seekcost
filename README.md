@@ -6,7 +6,7 @@
 
 SeekCost is an MIT-licensed, self-hosted personal investment workbench. Run it on your own server and keep watchlists, research, price observations, alerts, and decision records together—without handing your investment history to a hosted platform.
 
-[Self-hosting](docs/SELF_HOSTING.md) · [Backup & recovery](docs/BACKUP.md) · [Security](SECURITY.md) · [MIT license](LICENSE)
+[Run locally with Conda](#quick-start-with-conda-and-sqlite) · [Self-hosting](docs/SELF_HOSTING.md) · [Backup & recovery](docs/BACKUP.md) · [Security](SECURITY.md) · [MIT license](LICENSE)
 
 ![SeekCost watchlist with intraday trends and price changes — synthetic demo data](docs/images/watchlist-desktop.png)
 
@@ -38,7 +38,7 @@ See the [complete deployment guide](docs/SELF_HOSTING.md) for HTTPS, first-run s
 
 ## Demo account
 
-The current local development instance has this ordinary account, available at `http://localhost:3000/login`:
+An isolated local trial instance can be provisioned with this ordinary account at `http://localhost:3000/login`. **The account is not included in the repository or created by a fresh install.**
 
 | Field | Value |
 | --- | --- |
@@ -46,7 +46,7 @@ The current local development instance has this ordinary account, available at `
 | Password | `demo123` |
 | Permissions | Ordinary user, no administrator access |
 
-This is an **intentionally public demo password**, only for isolated trial environments. Other visitors sharing the account can view, change or delete its records and change its password. Never import real holdings, brokerage statements or private research. The local demo watchlist now contains 346 user-authorized Futu entries (215 US and 131 mainland China securities), with seven thematic groups. Assets and trades remain labeled fictional examples. Imported lists do not supply fundamental conclusions, valuations or live quotes. Source CSVs and databases are not distributed with the code.
+This is an **intentionally public demo password**, only for isolated trial environments. Other visitors sharing the account can view, change or delete its records and change its password. Never import real holdings, brokerage statements or private research. Watchlist entries in a local trial instance are stored in its database, not in this repository; their number and contents depend on the operator. Futu source CSVs and databases are not distributed with the code. Imported lists do not supply fundamental conclusions, valuations or live quotes.
 
 To replace fictional watchlist fixtures in an isolated demo, back up first, then run `python -m app.core.demo_watchlist_import /path/to/list.csv` from `backend` to preview; add `--apply` after reviewing. Multiple sources merge symbols and classifications; later files take precedence for names. Existing research drafts or non-fixture content block replacement. Old linked example notes are archived, while synthetic assets and trades remain unchanged.
 
@@ -54,16 +54,20 @@ To populate an existing ordinary `demo` account in an isolated database, back up
 
 ```sh
 cd backend
-.venv/bin/python -m app.core.demo_data --confirm-demo
+python -m app.core.demo_data --confirm-demo
 # Docker alternative (run from the repository root):
 # docker compose exec backend python -m app.core.demo_data --confirm-demo
 ```
 
 Includes 8 candidates, 5 investments, 6 transactions, 6 private notes, 3 trade plans, 3 paused alerts, 2 synthetic notifications and fictional calendar events. Prices, trades and research are examples, not investment advice; independently fetched quotes and K-lines remain external market data. Alerts are paused to avoid accidental monitoring. The command never creates accounts, changes passwords or grants administrator access. Repeats are a no-op after a successful seed; conflicting fixture records abort without overwriting them. No data is seeded automatically on startup.
 
-Databases are not distributed with the source, so fresh clones and Docker installations do not automatically contain this account. An operator must provision it separately in an isolated trial database. Ordinary registration and password changes still require at least 8 characters; this 7-character password was explicitly set by the operator for the local demo and cannot be created through the signup form. Never overwrite an existing account, grant demo administrator access, or use these credentials in an instance holding real data.
+Databases are not distributed with the source, so fresh clones and Docker installations do not automatically contain this account or any local watchlist. An operator must provision it separately in an isolated trial database. Ordinary registration and password changes still require at least 8 characters; this 7-character password must be set separately for a local demo and cannot be created through the signup form. Never overwrite an existing account, grant demo administrator access, or use these credentials in an instance holding real data.
 
 ## A quick tour
+
+### Understand a company in your own way
+
+In the research library's company workspace, work through guided questions or expand all sections and write freely. Record your understanding, evidence, counterarguments and what would change your mind; save progress across devices before confirming a private decision card. The first version uses clearly labeled prompts, not automatically fetched filings or investment recommendations. See the [company research guide](docs/GUIDED_RESEARCH.md).
 
 ### Follow businesses, not just prices
 
@@ -119,7 +123,25 @@ Intraday previews are provisional warnings, not persisted trading signals. Each 
 
 ## Local development
 
-### 1. Backend
+### Quick start with Conda and SQLite
+
+Install [Conda](https://docs.conda.io/) and Node.js 20+ with npm, then run from the repository root:
+
+```bash
+conda env create -f environment.yml
+conda activate seekcost-local
+python scripts/local_dev.py
+```
+
+Open `http://localhost:3000/register` and create your own account (password: at least 8 characters). The runner initializes `backend/data/seekcost-local.db`, installs frontend packages on first use, and starts both servers; Ctrl+C stops them. It does **not** use or overwrite `backend/data/seekcost.db`, `backend/.env`, or the Docker/PostgreSQL database. The SQLite file and local signing key stay in the Git-ignored `backend/data/` directory. Encrypted local backups are written under the ignored `backend/backups/local-dev/`; keep a separate copy of its key (`backend/data/backup.key`) if you need to recover those backups. A fresh clone starts with an empty database and no demo account.
+
+Optional fictional fixtures: first register an ordinary account named `demo` with your own password of at least 8 characters. Stop the servers, then run `python scripts/local_dev.py --seed-demo` from the repository root. This uses the same isolated SQLite database, adds the optional sample records described [above](#demo-account), and never seeds on normal startup. Do not use `demo123` for a personal installation.
+
+### Manual PostgreSQL development
+
+The following two-terminal setup uses PostgreSQL instead of the Conda/SQLite runner.
+
+#### 1. Backend
 
 Requires Python 3.10+ and PostgreSQL 14+.
 
@@ -140,7 +162,7 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
 
 Backend health check: `http://localhost:8001/health`
 
-### 2. Frontend
+#### 2. Frontend
 
 Requires Node.js 20+.
 
@@ -189,7 +211,7 @@ Playwright expects a test account token through `SEEKCOST_E2E_TOKEN`.
 - Never commit real brokerage statements, account numbers, positions, transactions, or production logs
 - Complete the [open-source checklist](OPEN_SOURCE_CHECKLIST.md) before publishing the repository
 - Follow the [security policy](SECURITY.md) when reporting a vulnerability
-- **Release gate:** historical commits contain broker import paths. Do not publish this Git history before completing the history cleanup and audit in the checklist; ignoring current files does not remove old commits.
+- This public release repository starts with one clean initial commit. The earlier local repository's history was not pushed here. Continue to audit tracked files, new commits, screenshots and secrets before each release; Git ignore rules alone are not a security review.
 
 ### Operational boundaries
 

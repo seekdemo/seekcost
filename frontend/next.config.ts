@@ -4,6 +4,7 @@ const apiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_URL |
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  distDir: process.env.SEEKCOST_NEXT_DIST_DIR || ".next",
   async redirects() {
     return [
       { source: "/notes/new", destination: "/research/new", permanent: false },

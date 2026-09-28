@@ -46,6 +46,8 @@ node_modules/
 
 # Next.js
 /.next/
+frontend/.next-local/
+frontend/.next-local-*/
 /out/
 
 # Production

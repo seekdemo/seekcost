@@ -6,7 +6,7 @@
 
 SeekCost 是采用 MIT 许可证、可自行部署的个人投资工作台。把股票池、研究、价格观察、提醒与决策记录放在一起，运行在自己的服务器上，不必把投资历史交给作者托管。
 
-[开始部署](docs/SELF_HOSTING.md) · [备份与恢复](docs/BACKUP.md) · [安全说明](SECURITY.md) · [MIT 许可证](LICENSE)
+[Conda 本地启动](#conda--sqlite-快速启动) · [开始部署](docs/SELF_HOSTING.md) · [备份与恢复](docs/BACKUP.md) · [安全说明](SECURITY.md) · [MIT 许可证](LICENSE)
 
 ![SeekCost 股票池：分时走势、最新价和涨跌幅，全部为虚构演示数据](docs/images/watchlist-desktop.png)
 
@@ -38,7 +38,7 @@ HTTPS、初始化、升级与限制见[完整部署手册](docs/SELF_HOSTING.md)
 
 ## Demo 体验账号
 
-当前本地开发实例已创建以下普通用户，可在 `http://localhost:3000/login` 登录：
+隔离的本地体验实例可以配置以下普通用户，并在 `http://localhost:3000/login` 登录。**仓库不包含该账户，全新部署也不会自动创建。**
 
 | 项目 | 内容 |
 | --- | --- |
@@ -46,7 +46,7 @@ HTTPS、初始化、升级与限制见[完整部署手册](docs/SELF_HOSTING.md)
 | 密码 | `demo123` |
 | 权限 | 普通用户，无管理员权限 |
 
-这是**主动公开的演示密码**，只用于隔离的体验环境。共享账号中的记录会被其他体验者看到、修改或删除，也可以被修改密码；不要导入真实持仓、券商报表或私人研究。当前本地 demo 自选清单已替换为用户授权的富途导出：346 个标的（215 个美股、131 个 A 股），保留 7 个主题分组。模拟资产和交易仍带有【演示】标记；自选清单本身不包含基本面结论、估值或实时行情。原始 CSV 和数据库不随源码分发。
+这是**主动公开的演示密码**，只用于隔离的体验环境。共享账号中的记录会被其他体验者看到、修改或删除，也可以被修改密码；不要导入真实持仓、券商报表或私人研究。本地体验实例的自选标的保存在其数据库里，数量和内容取决于部署者，并非仓库内置数据。富途原始 CSV 和数据库不随源码分发；导入的自选清单本身不包含基本面结论、估值或实时行情。
 
 替换隔离 demo 的虚构自选示例：先备份，再在 `backend` 目录运行 `python -m app.core.demo_watchlist_import /path/to/全部.csv /path/to/美股.csv` 预览；核对后增加 `--apply` 执行。支持多个文件，重复标的合并，后面的文件优先提供名称，分类和主题合并。已有研究草稿或非示例内容会阻止替换。旧示例笔记归档保留，模拟资产和交易不受影响。
 
@@ -54,14 +54,14 @@ HTTPS、初始化、升级与限制见[完整部署手册](docs/SELF_HOSTING.md)
 
 ```sh
 cd backend
-.venv/bin/python -m app.core.demo_data --confirm-demo
+python -m app.core.demo_data --confirm-demo
 # Docker 方式（在仓库根目录运行）：
 # docker compose exec backend python -m app.core.demo_data --confirm-demo
 ```
 
 包含 8 个候选标的、5 项投资、6 笔交易、6 篇私有笔记、3 个交易计划、3 条暂停的提醒、2 条模拟通知和虚构日历事件。价格锚点、交易和研究均为示例，不构成投资建议；页面另外获取的行情和 K 线仍来自外部数据源。提醒默认暂停，避免误触发监控。脚本不创建账号、不修改密码、不授予管理员权限；成功后重复执行不会重复导入，遇到同名示例记录冲突会中止而不覆盖。服务启动时不会自动填充数据。
 
-数据库不包含在源码中，因此克隆项目或首次 Docker 部署后，这个账号不会自动存在，需要部署者在隔离体验库中单独配置。普通注册和修改密码仍要求至少 8 位；这里的 7 位密码仅由部署者为本地 demo 单独设置，不能直接通过注册页创建。不要覆盖已有同名账户，不要给 demo 授予管理员权限，也不要在保存真实数据的正式实例中使用这组凭据。
+数据库不包含在源码中，因此克隆项目或首次 Docker 部署后，这个账号和本地自选清单都不会自动存在，需要部署者在隔离体验库中单独配置。普通注册和修改密码仍要求至少 8 位；这里的 7 位密码需由部署者为本地 demo 单独设置，不能直接通过注册页创建。不要覆盖已有同名账户，不要给 demo 授予管理员权限，也不要在保存真实数据的正式实例中使用这组凭据。
 
 ## 看看它怎么用
 
@@ -123,7 +123,25 @@ SeekCost 将三类投资放在同一套系统中管理，但不会混用核算�
 
 ## 本地启动
 
-### 1. 后端
+### Conda + SQLite 快速启动
+
+准备 Conda 和带 npm 的 Node.js 20+，在仓库根目录执行：
+
+```bash
+conda env create -f environment.yml
+conda activate seekcost-local
+python scripts/local_dev.py
+```
+
+打开 `http://localhost:3000/register`，自行注册账户（密码至少 8 位）。启动器会初始化 `backend/data/seekcost-local.db`，首次运行时安装前端依赖，并同时启动前后端；按 Ctrl+C 一起停止。它**不会**使用或覆盖 `backend/data/seekcost.db`、`backend/.env` 或 Docker/PostgreSQL 数据库。SQLite 文件和本地签名密钥保存在被 Git 忽略的 `backend/data/` 中；加密的本地备份保存在同样被忽略的 `backend/backups/local-dev/`。如需恢复备份，请把备份密钥 `backend/data/backup.key` 另存到安全位置。新克隆的仓库从空库开始，不自带 demo 账号。
+
+虚构示例数据是可选的：先在隔离体验库中注册普通 `demo` 账户，使用自己设置的至少 8 位密码。停止服务后，在仓库根目录运行 `python scripts/local_dev.py --seed-demo`；它只向这份独立 SQLite 数据库导入上方[Demo 体验账号](#demo-体验账号)所述的示例记录。正常启动不会自动导入；个人实例不要使用 `demo123`。
+
+### 手动使用 PostgreSQL 开发
+
+下面是不用 Conda/SQLite 启动器、分别运行前后端的 PostgreSQL 流程。
+
+#### 1. 后端
 
 需要 Python 3.10+ 和 PostgreSQL 14+。
 
@@ -144,7 +162,7 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
 
 后端健康检查：`http://localhost:8001/health`
 
-### 2. 前端
+#### 2. 前端
 
 需要 Node.js 20+。
 
@@ -193,7 +211,7 @@ Playwright 需要通过 `SEEKCOST_E2E_TOKEN` 提供测试账号令牌。
 - 不要提交真实券商报表、账户编号、持仓、交易记录或生产日志
 - 发布公开仓库前，请完成 [开源检查清单](OPEN_SOURCE_CHECKLIST.md)
 - 发现安全问题时，请遵循 [安全策略](SECURITY.md)
-- **公开发布阻断项：Git 历史仍包含券商导入路径。** 必须按检查清单清理并审计历史后再公开，当前文件的忽略规则不能清除旧提交。
+- 当前公开发布仓库从一个全新的初始提交开始，旧本地仓库的历史没有推到这里。每次发布仍需检查被跟踪文件、新提交、截图和密钥；Git 忽略规则不能代替安全审计。
 
 ### 使用边界
 
