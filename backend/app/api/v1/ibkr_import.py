@@ -152,6 +152,27 @@ class IBKRConfirmResponse(BaseModel):
     new_assets_created: int
     cash_assets_synced: int = 0
     errors: list[str]
+    position_discrepancies: list[str] = []
+
+
+def _compare_imported_positions(
+    assets: dict[str, Asset],
+    imported_asset_ids: set[int],
+    open_positions: list[IBKROpenPosition],
+) -> list[str]:
+    """Report ledger/snapshot differences without changing holdings or history."""
+    if not open_positions:
+        return []
+    reported = {position.symbol.upper(): float(position.quantity) for position in open_positions}
+    discrepancies: list[str] = []
+    for symbol, asset in assets.items():
+        if asset.id not in imported_asset_ids or asset.is_cash:
+            continue
+        ledger_quantity = float(asset.quantity)
+        reported_quantity = reported.get(symbol, 0.0)
+        if abs(ledger_quantity - reported_quantity) > 0.0001:
+            discrepancies.append(f"{symbol}: 交易流水 {ledger_quantity:g} 股，期末持仓 {reported_quantity:g} 股")
+    return discrepancies
 
 
 class IBKRParsedPreviewRequest(BaseModel):
@@ -192,6 +213,40 @@ def _make_cash_flow_fingerprint(flow: IBKRCashFlow) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+def _infer_trade_symbol_aliases(text: str) -> dict[str, str]:
+    """Match temporary V tickers to the closing ticker using IBKR ClosedLot evidence."""
+    buys: dict[tuple[str, str], list[float]] = defaultdict(lambda: [0.0, 0.0])
+    closed: dict[tuple[str, str], list[float]] = defaultdict(lambda: [0.0, 0.0])
+    for line in text.splitlines():
+        parts = next(csv.reader(io.StringIO(line)), [])
+        if len(parts) < 14 or parts[0] != "交易" or parts[1] != "Data" or parts[3] != "股票":
+            continue
+        symbol = parts[5].strip().upper()
+        date = parts[6].split(",", 1)[0].strip()
+        if not symbol or not date:
+            continue
+        if parts[2] == "Order" and symbol.endswith("V"):
+            qty = _parse_number(parts[8] if len(parts) > 16 else parts[7])
+            basis = _parse_number(parts[13] if len(parts) > 16 else parts[12])
+            if qty is not None and qty > 0 and basis is not None:
+                buys[(symbol, date)][0] += qty
+                buys[(symbol, date)][1] += abs(basis)
+        elif parts[2] == "ClosedLot":
+            qty = _parse_number(parts[8])
+            basis = _parse_number(parts[13])
+            if qty is not None and basis is not None:
+                closed[(symbol, date)][0] += abs(qty)
+                closed[(symbol, date)][1] += abs(basis)
+
+    aliases: dict[str, str] = {}
+    for (source, date), (qty, basis) in buys.items():
+        target = source[:-1]
+        match = closed.get((target, date))
+        if match and abs(qty - match[0]) < 0.0001 and abs(basis - match[1]) < 0.01:
+            aliases[source] = target
+    return aliases
+
+
 def _parse_activity_statement(text: str) -> tuple[list[IBKRParsedRow], int]:
     """解析活动报表CSV的"交易"section，提取股票买卖记录。
 
@@ -205,6 +260,7 @@ def _parse_activity_statement(text: str) -> tuple[list[IBKRParsedRow], int]:
     total_trade_lines = 0
     # 交易所列偏移: 新格式在日期/时间后多一列"交易所"
     exchange_offset = 0
+    aliases = _infer_trade_symbol_aliases(text)
 
     for line in lines:
         reader = csv.reader(io.StringIO(line))
@@ -247,7 +303,8 @@ def _parse_activity_statement(text: str) -> tuple[list[IBKRParsedRow], int]:
         # 解析字段（使用偏移量兼容新旧格式）
         o = exchange_offset
         currency = parts[4].strip() if len(parts) > 4 else "USD"
-        symbol = parts[5].strip().upper() if len(parts) > 5 else ""
+        raw_symbol = parts[5].strip().upper() if len(parts) > 5 else ""
+        symbol = aliases.get(raw_symbol, raw_symbol)
         datetime_str = parts[6].strip() if len(parts) > 6 else ""
         # parts[7] 在新格式中是交易所("-")，跳过
         qty_raw = parts[7 + o].strip() if len(parts) > 7 + o else ""
@@ -301,7 +358,7 @@ def _parse_activity_statement(text: str) -> tuple[list[IBKRParsedRow], int]:
             realized_pnl=realized_pnl,
             mtm_pnl=mtm_pnl,
             trade_codes=trade_codes,
-            description=f"{symbol} {tx_type.upper()} {abs(qty)}@{abs(price)}",
+            description=f"{raw_symbol} {tx_type.upper()} {abs(qty)}@{abs(price)}",
         ))
 
     return trades, total_trade_lines
@@ -974,6 +1031,15 @@ async def ibkr_confirm(
                 realized_pnl=realized_by_symbol.get(sym),
             )
 
+    # Surface any remaining mismatch for review; never hide an asset to make
+    # an incomplete trade ledger appear to agree with the broker snapshot.
+    imported_asset_ids = affected_asset_ids | {
+        tx.asset_id for tx in existing_txs if (tx.note or "").startswith("IBKR导入")
+    }
+    position_discrepancies = _compare_imported_positions(
+        user_assets, imported_asset_ids, open_positions,
+    )
+
     # 存储 IBKR Lot 批次数据到数据库（每次导入覆盖同一资产的旧 lots）
     if open_positions:
         # 重新获取最新的 user_assets 映射
@@ -1102,4 +1168,5 @@ async def ibkr_confirm(
         new_assets_created=new_assets_count,
         cash_assets_synced=cash_assets_synced,
         errors=errors,
+        position_discrepancies=position_discrepancies,
     )

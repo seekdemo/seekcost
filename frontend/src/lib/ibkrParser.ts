@@ -59,12 +59,53 @@ function parseNumber(raw: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function inferTradeSymbolAliases(text: string): Map<string, string> {
+  const buys = new Map<string, [number, number]>();
+  const closed = new Map<string, [number, number]>();
+  for (const line of text.split(/\r?\n/)) {
+    const parts = parseCSVLine(line);
+    if (parts.length < 14 || parts[0] !== "交易" || parts[1] !== "Data" || parts[3] !== "股票") continue;
+    const symbol = (parts[5] ?? "").toUpperCase();
+    const date = (parts[6] ?? "").split(",", 1)[0].trim();
+    if (!symbol || !date) continue;
+    if (parts[2] === "Order" && symbol.endsWith("V")) {
+      const offset = parts.length > 16 ? 1 : 0;
+      const qty = parseNumber(parts[7 + offset] ?? "");
+      const basis = parseNumber(parts[12 + offset] ?? "");
+      if (qty == null || qty <= 0 || basis == null) continue;
+      const key = `${symbol}|${date}`;
+      const prior = buys.get(key) ?? [0, 0];
+      buys.set(key, [prior[0] + qty, prior[1] + Math.abs(basis)]);
+    } else if (parts[2] === "ClosedLot") {
+      const qty = parseNumber(parts[8] ?? "");
+      const basis = parseNumber(parts[13] ?? "");
+      if (qty == null || basis == null) continue;
+      const key = `${symbol}|${date}`;
+      const prior = closed.get(key) ?? [0, 0];
+      closed.set(key, [prior[0] + Math.abs(qty), prior[1] + Math.abs(basis)]);
+    }
+  }
+  const aliases = new Map<string, string>();
+  for (const [key, [qty, basis]] of buys) {
+    const separator = key.lastIndexOf("|");
+    const source = key.slice(0, separator);
+    const date = key.slice(separator + 1);
+    const target = source.slice(0, -1);
+    const match = closed.get(`${target}|${date}`);
+    if (match && Math.abs(qty - match[0]) < 0.0001 && Math.abs(basis - match[1]) < 0.01) {
+      aliases.set(source, target);
+    }
+  }
+  return aliases;
+}
+
 function parseTrades(text: string): { rows: IBKRParsedRow[]; totalTradeLines: number } {
   const lines = text.split(/\r?\n/);
   const rows: IBKRParsedRow[] = [];
   let totalTradeLines = 0;
   let inStockSection = false;
   let exchangeOffset = 0;
+  const aliases = inferTradeSymbolAliases(text);
 
   for (const line of lines) {
     if (!line.trim()) continue;
@@ -91,7 +132,8 @@ function parseTrades(text: string): { rows: IBKRParsedRow[]; totalTradeLines: nu
 
     const o = exchangeOffset;
     const currency = parts[4] ?? "USD";
-    const symbol = (parts[5] ?? "").toUpperCase();
+    const rawSymbol = (parts[5] ?? "").toUpperCase();
+    const symbol = aliases.get(rawSymbol) ?? rawSymbol;
     const datetimeStr = parts[6] ?? "";
     const qty = parseNumber(parts[7 + o] ?? "");
     const price = parseNumber(parts[8 + o] ?? "");
@@ -122,7 +164,7 @@ function parseTrades(text: string): { rows: IBKRParsedRow[]; totalTradeLines: nu
       realized_pnl: realizedPnl,
       mtm_pnl: mtmPnl,
       trade_codes: tradeCodes,
-      description: `${symbol} ${txType.toUpperCase()} ${Math.abs(qty)}@${Math.abs(price)}`,
+      description: `${rawSymbol} ${txType.toUpperCase()} ${Math.abs(qty)}@${Math.abs(price)}`,
     });
   }
 

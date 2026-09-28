@@ -450,6 +450,15 @@ function ResultStep({ result, onReset }: { result: IBKRConfirmResponse; onReset:
           {result.errors.map((e, i) => <p key={i}>{e}</p>)}
         </div>
       )}
+      {result.position_discrepancies?.length > 0 && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-left max-w-2xl mx-auto space-y-2">
+          <p className="font-semibold text-primary">期末持仓与交易流水不一致</p>
+          <p className="text-secondary">以下标的的交易流水与期末持仓不一致。系统没有归档、补造交易或改写盈亏；请核对是否存在代码变更、转仓或缺失的交易记录。</p>
+          <ul className="list-disc pl-5 text-secondary">
+            {result.position_discrepancies.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </div>
+      )}
       <div className="flex gap-3 justify-center pt-2">
         <button onClick={onReset}
           className="rounded-lg border border-themed px-5 py-2.5 text-sm text-muted hover:bg-surface-alt transition">

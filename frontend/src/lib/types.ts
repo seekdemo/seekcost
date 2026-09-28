@@ -1195,4 +1195,5 @@ export interface IBKRConfirmResponse {
   new_assets_created: number;
   cash_assets_synced: number;
   errors: string[];
+  position_discrepancies: string[];
 }
