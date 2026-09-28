@@ -1,0 +1,16 @@
+# Include this file from the top level of nginx.conf (outside the http block).
+# Only 443 is bound publicly; 80 is not used by SeekCost.
+stream {
+    map $ssl_preread_alpn_protocols $seekcost_tls_upstream {
+        ~\bacme-tls/1\b 127.0.0.1:8443;
+        default 127.0.0.1:8444;
+    }
+
+    server {
+        listen 443;
+        ssl_preread on;
+        proxy_pass $seekcost_tls_upstream;
+        proxy_connect_timeout 5s;
+        proxy_timeout 120s;
+    }
+}

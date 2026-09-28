@@ -2,13 +2,13 @@
 
 SeekCost 是由你管理服务器和数据的个人投资工作台，不是托管式 SaaS。Compose 默认关闭公开注册，没有 demo 密码，也不会把第一个访问者自动设为管理员。
 
-> **验收状态：**尚未在目标服务器完成真实容器启动和 PostgreSQL 恢复演练。请先在测试机按文末清单验收，再存入唯一一份正式数据。公开发布与后续更新仍需执行 [开源检查清单](../OPEN_SOURCE_CHECKLIST.md)。
+> **验收状态：**2026-09-28 已在一台 Ubuntu 24.04 服务器完成容器启动、HTTPS 登录页检查与 PostgreSQL 快照恢复演练。这不代表所有服务器、行情供应商和并发负载都已验证。公开发布与后续更新仍需执行 [开源检查清单](../OPEN_SOURCE_CHECKLIST.md)。
 
 ## 1. 准备与启动
 
 - Linux 服务器上的 Docker Engine 与 Compose v2，初始化时需要 Python 3。Mac/Windows 可通过 Docker Desktop 试用。
 - Git、可访问容器仓库和依赖源的网络；行情供应商还需独立验证网络可达性。
-- 公网访问需要域名与 HTTPS，也可以仅通过 VPN / SSH 隧道使用。
+- 公网访问需要 HTTPS；可使用域名，或按下文用公网 IPv4 申请短期证书。也可以仅通过 VPN / SSH 隧道使用。
 - 数据与备份使用持久磁盘，不要放在 `/tmp`。实际构建内存、行情任务负载与恢复耗时应在目标服务器测量，目前没有并发容量承诺。
 
 在项目根目录执行：
@@ -50,6 +50,71 @@ ssh -L 3000:127.0.0.1:3000 YOUR_SERVER
 
 `deploy/Caddyfile` 是主机安装 Caddy 时的配置示例。设置 `SEEKCOST_DOMAIN` 为自己的域名，配置 DNS，允许证书签发所需的 80/443 端口。它反向代理本机 3000 端口；如果修改 `HTTP_PORT`，同步修改代理目标。
 
+如果只用服务器公网 IPv4，使用 `deploy/nginx-ip-stream.conf.example` 和 `deploy/nginx-ip.conf.example` 两个 Nginx 模板。前者在公网 443 读取 TLS ALPN，把证书验证转发到本机 8443、正常请求转发到本机 8444；后者在本机 8444 终止 HTTPS 并反代前端 3000。**SeekCost 不监听 80 端口。**公网安全组只需为它开放 TCP 443；8443、8444 和 Docker 前端 3000 保持本机访问，数据库和后端不要开放公网端口。IP 地址的 Let's Encrypt 证书有效期仅 6 天，必须自动续期。
+
+Ubuntu 24.04 上已验证的初装顺序如下；每条命令里的 `YOUR_PUBLIC_IP` 换成实际 IP。先安装 Nginx 的 stream 模块和 [acme.sh](https://github.com/acmesh-official/acme.sh)，停用 Nginx 默认站点，在 `/etc/nginx/nginx.conf` 顶层（`http {}` 外）加入 `include /etc/nginx/seekcost-stream.conf;`，把 stream 模板装到这个路径。此时不要安装 HTTPS 站点模板，因为还没有证书。启动 Nginx 后，它应只监听公网 443：
+
+```bash
+sudo apt-get install nginx libnginx-mod-stream
+git clone --depth 1 https://github.com/acmesh-official/acme.sh.git /home/ubuntu/acme-sh-src
+cd /home/ubuntu/acme-sh-src
+sudo ./acme.sh --install --home /opt/seekcost-acme --no-cron --no-profile
+cd -
+sudo install -m 0644 deploy/nginx-ip-stream.conf.example /etc/nginx/seekcost-stream.conf
+# 备份并编辑 /etc/nginx/nginx.conf，加入上述顶层 include；停用默认站点。
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+通过 443 的 TLS-ALPN 完成签发；`acme.sh` 会把验证监听器短暂绑定在本机 8443，80 端口始终不参与。需要先演练时，将下面的 `--server letsencrypt` 改为 `--server letsencrypt_test`；通过后再使用生产 CA 签发。不要在验证失败时频繁请求生产证书。正式证书签发后，安装到 Nginx 路径，并把替换过 IP 的 HTTPS 站点模板安装到 `/etc/nginx/sites-enabled/seekcost-ip`：
+
+```bash
+sudo env -u SUDO_USER -u SUDO_UID -u SUDO_GID /opt/seekcost-acme/acme.sh \
+  --issue --alpn --tlsport 8443 --local-address 127.0.0.1 \
+  --server letsencrypt --keylength ec-256 --certificate-profile shortlived \
+  --days 3 -d YOUR_PUBLIC_IP --home /opt/seekcost-acme
+sudo install -d -m 0700 /etc/ssl/seekcost-ip
+sudo install -m 0600 /opt/seekcost-acme/YOUR_PUBLIC_IP_ecc/YOUR_PUBLIC_IP.key /etc/ssl/seekcost-ip/key.pem
+sudo install -m 0644 /opt/seekcost-acme/YOUR_PUBLIC_IP_ecc/fullchain.cer /etc/ssl/seekcost-ip/fullchain.pem
+sudo env -u SUDO_USER -u SUDO_UID -u SUDO_GID /opt/seekcost-acme/acme.sh \
+  --install-cert -d YOUR_PUBLIC_IP --ecc \
+  --key-file /etc/ssl/seekcost-ip/key.pem \
+  --fullchain-file /etc/ssl/seekcost-ip/fullchain.pem \
+  --reloadcmd 'systemctl reload nginx' --home /opt/seekcost-acme
+# 将 deploy/nginx-ip.conf.example 内的 __PUBLIC_IP__ 替换后安装为站点配置。
+sudo nginx -t
+sudo systemctl reload nginx
+sudo install -m 0644 deploy/seekcost-acme.service /etc/systemd/system/
+sudo install -m 0644 deploy/seekcost-acme.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now seekcost-acme.timer
+```
+
+核对 `ss -ltn` 中没有 SeekCost 的 `:80` 监听、`systemctl list-timers seekcost-acme.timer` 显示下一次检查、`curl -I https://YOUR_PUBLIC_IP/login` 能验证证书。续期应在证书到期前成功；仅有 timer 存在不代表续期链路正常，应监测证书有效期和 `journalctl -u seekcost-acme.service`。这一配置会占用公网 443；要在同一 IP 的 443 托管更多 HTTPS 服务，需要统一管理反向代理和路由。
+
+已有上述 IP 站点时，可以在同一个 443 上增加域名站点。先为域名添加指向服务器 IP 的 A 记录，确认 DNS 生效；以 `seekcost.seekdemo.com` 和 `152.32.188.30` 为例，保留 IP 站点为 `default_server`，域名站点由 TLS SNI 选择。Nginx stream 配置无需再监听第二个公网端口。域名证书通过同一个本机 8443 TLS-ALPN 验证通道签发，并由同一个 `seekcost-acme.timer` 检查续期：
+
+```bash
+sudo env -u SUDO_USER -u SUDO_UID -u SUDO_GID /opt/seekcost-acme/acme.sh \
+  --issue --alpn --tlsport 8443 --local-address 127.0.0.1 \
+  --server letsencrypt --keylength ec-256 \
+  -d seekcost.seekdemo.com --home /opt/seekcost-acme
+sudo install -d -m 0700 /etc/ssl/seekcost-domain
+sudo env -u SUDO_USER -u SUDO_UID -u SUDO_GID /opt/seekcost-acme/acme.sh \
+  --install-cert -d seekcost.seekdemo.com --ecc \
+  --key-file /etc/ssl/seekcost-domain/key.pem \
+  --fullchain-file /etc/ssl/seekcost-domain/fullchain.pem \
+  --reloadcmd 'systemctl reload nginx' --home /opt/seekcost-acme
+# 将 deploy/nginx-domain.conf.example 中的 __DOMAIN__ 替换为 seekcost.seekdemo.com，
+# 安装为 /etc/nginx/sites-enabled/seekcost-domain；保留原 IP 站点。
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+其他域名也按此替换域名值。将 `.env` 中的 `CORS_ORIGINS` 同时包含 `https://seekcost.seekdemo.com` 和 `https://152.32.188.30`（如仍需 IP 登录），重新创建后端容器，再分别以两个 HTTPS 地址检查登录与证书。不要把证书私钥、`.env` 或备份密码加入 Git。
+
+替换服务器或公网 IP 时，需要在新主机重新签发证书、替换 Nginx 模板中的 IP，更新 `.env` 的 `CORS_ORIGINS`，并恢复数据库与备份密钥；证书不能直接用于另一个 IP。没有有效 HTTPS 前，不要让用户通过纯 HTTP 输入密码。
+
 容器化反向代理需要自行接入 Compose 网络并代理 `frontend:3000`，不能照抄主机的 `127.0.0.1`。
 
 修改根目录 `.env` 后执行 `docker compose up -d`：
@@ -58,6 +123,8 @@ ssh -L 3000:127.0.0.1:3000 YOUR_SERVER
 CORS_ORIGINS=["https://your-own-domain.example"]
 ALLOW_REGISTRATION=false
 ```
+
+IP 访问时将来源改为 `https://YOUR_PUBLIC_IP`；同时使用域名和 IP 时，把两者都加入 JSON 数组。保留 `http://localhost:3000` 只在仍需本地访问时。修改后重新创建后端容器以加载配置，并用浏览器检查登录请求是否正常。
 
 Caddy 示例不是完整的公网防护方案；公网部署还需要登录限流、访问控制和外部监控。当前令牌保存在浏览器本地，改密不会立即撤销既有令牌，不建议直接开放公众注册。
 

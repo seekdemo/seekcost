@@ -30,7 +30,7 @@ docker compose up -d --build
 docker compose exec backend python -m app.core.owner myowner
 ```
 
-Open `http://localhost:3000`. Remote installs can use an SSH tunnel or an HTTPS reverse proxy. Production deployments do not automatically create a demo account; public signup is disabled. Configuration secrets are generated locally and never printed.
+Open `http://localhost:3000`. Remote installs can use an SSH tunnel or an HTTPS reverse proxy. The [self-hosting guide](docs/SELF_HOSTING.md#3-https-与配置) covers a port-443-only Nginx/ACME setup for a public IP and domain; port 80 remains free. Do not submit passwords over plain HTTP. Production deployments do not automatically create a demo account; public signup is disabled. Configuration secrets are generated locally and never printed.
 
 **Before adding important data:** store `deploy/secrets/backup-password` off-server and perform a [restore drill](docs/BACKUP.md). Automatic backups are encrypted, but local-only unless you configure offsite replication. Never use `docker compose down -v` to upgrade—it removes the database volume.
 

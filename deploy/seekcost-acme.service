@@ -1,0 +1,8 @@
+[Unit]
+Description=Renew SeekCost HTTPS certificates without port 80
+Wants=network-online.target
+After=network-online.target nginx.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/seekcost-acme/acme.sh --cron --home /opt/seekcost-acme --treat-skip-as-success
