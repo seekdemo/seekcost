@@ -411,6 +411,16 @@ export interface IntradayPreview {
 
 export interface WorkbenchOverview {
   generated_at: string;
+  volume_watch?: {
+    threshold: number;
+    items: Array<{
+      stock_id: number; symbol: string; name: string; ratio: number;
+      latest_volume: number; previous_volume: number; bar_date: string;
+    }>;
+    scanned_count: number;
+    total_count: number;
+    last_evaluated_at: string | null;
+  };
   strike_candidates: Array<{ id: number; symbol: string; name: string; current_price: number; strike_price: number }>;
   upcoming_events: Array<{ stock_id: number; symbol: string; title: string; date: string; days: number }>;
   due_research: Array<{ id: number; title: string; kind: ResearchKind; status: ResearchStatus; next_review_at: string }>;

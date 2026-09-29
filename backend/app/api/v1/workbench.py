@@ -3,6 +3,7 @@ import asyncio
 from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, Field
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +16,7 @@ from app.core.process_capacity_limiter import ProcessCapacityLimiter
 from app.core.quant_cockpit import build_quant_cockpit
 from app.core.quant_strategies import PRICE_ANCHOR_STRATEGY_KEY, STRATEGY_KEY
 from app.core.security import get_current_user
+from app.core.volume_watch import volume_watch_overview
 from app.models.asset import Asset, AssetCategory, AssetZone
 from app.models.cash_account import CashAccount
 from app.models.note import Note, ResearchLink
@@ -23,6 +25,7 @@ from app.models.trade_plan import PlanStatus, TradePlan
 from app.models.transaction import Transaction
 from app.models.user import User
 from app.models.watchlist import WatchStage, WatchStock
+from app.models.volume_watch import VolumeWatchSetting
 from app.schemas.prices import DailyBarInput
 
 router = APIRouter(prefix="/workbench", tags=["投资工作台"])
@@ -33,6 +36,26 @@ _INTRADAY_PREVIEW_CONCURRENCY = 6
 _intraday_preview_capacity = ProcessCapacityLimiter(_INTRADAY_PREVIEW_CONCURRENCY)
 
 intraday_preview_cache = IntradayPreviewCache()
+
+
+class VolumeWatchSettingInput(BaseModel):
+    threshold: float = Field(ge=1.0, le=20.0, allow_inf_nan=False)
+
+
+@router.patch("/volume-watch")
+async def update_volume_watch_setting(
+    payload: VolumeWatchSettingInput,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    setting = await db.scalar(select(VolumeWatchSetting).where(VolumeWatchSetting.user_id == user.id))
+    if setting is None:
+        setting = VolumeWatchSetting(user_id=user.id, threshold=payload.threshold)
+        db.add(setting)
+    else:
+        setting.threshold = payload.threshold
+    await db.commit()
+    return {"threshold": setting.threshold}
 
 
 def _normalized_asset_symbol(symbol: str) -> str:
@@ -61,6 +84,7 @@ async def get_workbench_overview(
     )).scalars().all()
     stock_ids = [stock.id for stock in stocks]
     quant_cockpit = await build_quant_cockpit(db, user.id, list(stocks))
+    volume_watch = await volume_watch_overview(db, user.id, list(stocks), now)
 
     # Keep the home page useful for the whole investment ledger, not only the
     # stock workflow. Values are intentionally returned with their account
@@ -227,6 +251,7 @@ async def get_workbench_overview(
 
     return {
         "generated_at": now.isoformat(),
+        "volume_watch": volume_watch,
         "quant_cockpit": quant_cockpit,
         "strike_candidates": strike_candidates[:12],
         "upcoming_events": sorted(upcoming_events, key=lambda item: (item["date"], item["symbol"]))[:12],

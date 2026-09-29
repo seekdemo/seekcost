@@ -855,6 +855,7 @@ function NewNoteContent() {
     const transactionId = Number(searchParams.get("transaction"));
     const assetId = Number(searchParams.get("asset"));
     const planId = Number(searchParams.get("trade_plan"));
+    const stockId = Number(searchParams.get("stock"));
     const links: WatchNote["links"] = [];
     if (Number.isFinite(transactionId) && transactionId > 0) links.push({ entityType: "transaction", entityId: transactionId });
     if (Number.isFinite(assetId) && assetId > 0) links.push({ entityType: "asset", entityId: assetId });
@@ -872,7 +873,7 @@ function NewNoteContent() {
       links,
       allowComments: true,
       content: "",
-      stockIds: [],
+      stockIds: Number.isInteger(stockId) && stockId > 0 ? [String(stockId)] : [],
       knowledgeTags: [],
       tags: [],
       commentCount: 0,

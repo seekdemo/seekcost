@@ -403,6 +403,8 @@ export const api = {
   // ── 投资工作台 ──
   getWorkbenchOverview: () =>
     request<import("./types").WorkbenchOverview>("/workbench/overview"),
+  updateVolumeWatchSetting: (threshold: number) =>
+    request<{ threshold: number }>("/workbench/volume-watch", { method: "PATCH", body: JSON.stringify({ threshold }) }),
   getWorkbenchIntradayPreview: (refresh = false, signal?: AbortSignal) =>
     request<import("./types").IntradayPreview>(`/workbench/intraday-preview${refresh ? "?refresh=true" : ""}`, { signal }),
 

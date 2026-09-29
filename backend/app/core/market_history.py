@@ -230,8 +230,9 @@ def completed_daily_bars(
     exchange_timezone: str,
     *,
     now: datetime | None = None,
+    cutoff_time: time = _COMPLETED_SESSION_CUTOFF,
 ) -> list[DailyBarInput]:
-    """Exclude Yahoo's same-session daily bar until 16:15 in the exchange timezone."""
+    """Exclude Yahoo's same-session daily bar until the market's completion cutoff."""
     if not bars:
         return []
     try:
@@ -242,6 +243,6 @@ def completed_daily_bars(
     current = now or datetime.now(timezone.utc)
     local_now = current.replace(tzinfo=market_timezone) if current.tzinfo is None else current.astimezone(market_timezone)
     latest_date = _bar_local_date(bars[-1].date, market_timezone)
-    if latest_date == local_now.date() and local_now.time() < _COMPLETED_SESSION_CUTOFF:
+    if latest_date == local_now.date() and local_now.time() < cutoff_time:
         return list(bars[:-1])
     return list(bars)

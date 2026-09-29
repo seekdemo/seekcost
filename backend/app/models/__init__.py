@@ -20,3 +20,4 @@ from app.models.watchlist import EarningsEvent, EarningsStatus, WatchStock, Stoc
 from app.models.watchlist_research import WatchResearchSectionKey, WatchStockResearchSection
 from app.models.investment_tool import InvestmentTool
 from app.models.quant_strategy import QuantSignalSnapshot, QuantStrategyQualification, QuantStrategySetting
+from app.models.volume_watch import VolumeWatchSetting

@@ -4,6 +4,7 @@ import logging
 from app.core.database import async_session
 from app.core.price_updater import update_all_prices, update_all_watchlist_prices
 from app.core.price_anchor_monitor import scan_due_price_anchor_stocks
+from app.core.volume_watch import scan_due_volume_watch_stocks
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,13 @@ async def _tick():
                     "[价格锚点监控] 扫描 %s 个标的，失败 %s 个",
                     report.scanned,
                     report.errors,
+                )
+            volume_report = await scan_due_volume_watch_stocks(db)
+            if volume_report.scanned or volume_report.errors:
+                logger.info(
+                    "[放量观察] 扫描 %s 个标的，失败 %s 个",
+                    volume_report.scanned,
+                    volume_report.errors,
                 )
     except Exception as e:
         logger.error(f"[定时刷新] 失败: {e}")
