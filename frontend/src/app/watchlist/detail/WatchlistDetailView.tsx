@@ -194,7 +194,6 @@ function DetailContent({ stockId }: { stockId: number }) {
   if (status === "loading") {
     return (
       <div className="page-container min-w-0" aria-busy="true">
-        <div className="mb-8 h-5 w-28 animate-pulse rounded bg-surface" />
         <div className="h-12 w-2/3 animate-pulse rounded bg-surface" />
         <div className="mt-8 h-36 animate-pulse rounded-md bg-surface" />
         <div className="mt-10 space-y-5"><div className="h-48 animate-pulse rounded-md bg-surface" /><div className="h-48 animate-pulse rounded-md bg-surface" /></div>
@@ -255,11 +254,10 @@ function DetailContent({ stockId }: { stockId: number }) {
   return (
     <div className="page-container company-dossier min-w-0">
       <header className="mb-4 min-w-0">
-        <Link href="/watchlist" className="inline-flex min-h-10 items-center text-sm text-secondary transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]">{t("watchlist.back")}</Link>
-        <div className="mt-2 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="company-dossier__identity min-w-0">
             <h1 className="page-title break-words">{profile.stock.symbol} <span className="company-dossier__name">{profile.stock.name}</span></h1>
-            <p className="mt-2 text-sm text-secondary">{profile.stock.sector || t("watchlist.unclassified")} · {t(`watchlist.stage${profile.stock.stage === "radar" ? "Radar" : profile.stock.stage === "conviction" ? "Conviction" : "Strike"}`)}</p>
+            <span className="company-dossier__classification">{profile.stock.sector || t("watchlist.unclassified")} · {t(`watchlist.stage${profile.stock.stage === "radar" ? "Radar" : profile.stock.stage === "conviction" ? "Conviction" : "Strike"}`)}</span>
           </div>
           <p className="shrink-0 text-xs text-muted">{t("dossier.updated")} {new Date(profile.stock.updated_at).toLocaleDateString(localeTag)}</p>
         </div>

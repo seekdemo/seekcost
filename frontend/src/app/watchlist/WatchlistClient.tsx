@@ -2217,7 +2217,7 @@ function QuickDecisionDrawer({
         </div>
 
         <footer className="flex items-center gap-2 border-t border-themed bg-page/95 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <Link href={`/watchlist/${encodeURIComponent(stock.id)}`} className="ui-button min-w-0 flex-1 justify-center">{t("watchlist.openFullResearch")}</Link>
+          <Link href={`/watchlist/${encodeURIComponent(stock.id)}`} target="_blank" rel="noopener noreferrer" className="ui-button min-w-0 flex-1 justify-center">{t("watchlist.openFullResearch")}</Link>
           <button type="button" onClick={save} className="ui-button ui-button--primary min-w-0 flex-1">{t("watchlist.saveDecision")}</button>
         </footer>
       </aside>

@@ -291,8 +291,10 @@ body { background: var(--page-bg); }
 .research-library-page .research-card__metrics button:hover { background: var(--accent-bg); color: var(--accent); }
 
 .company-dossier { max-width: 1376px; margin-inline: auto; }
-.company-dossier .page-title { font-size: 28px; line-height: 1.4; font-weight: 600; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
-.company-dossier__name { font-size: 18px; font-weight: 400; color: var(--text-secondary); }
+.company-dossier__identity { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+.company-dossier .page-title { font-size: 28px; line-height: 1.3; font-weight: 650; display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.company-dossier__name { font-size: 18px; font-weight: 400; letter-spacing: 0; color: var(--text-secondary); }
+.company-dossier__classification { color: var(--text-secondary); font-size: 14px; line-height: 1.5; white-space: nowrap; }
 .company-dossier > header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 24px; }
 .company-dossier > .rounded-xl { border-radius: 12px; background: var(--surface); }
 .watchlist-scroll-region { scrollbar-gutter: stable; }
@@ -312,8 +314,9 @@ body { background: var(--page-bg); }
   .page-shell .page-header { align-items: stretch; padding-bottom: 20px; gap: 16px; }
   .page-actions { justify-content: flex-start; }
   .ui-button { padding-inline: 12px; }
-  .company-dossier .page-title { font-size: 24px; gap: 8px; }
+  .company-dossier .page-title { font-size: 24px; gap: 4px 8px; }
   .company-dossier__name { font-size: 16px; }
+  .company-dossier__classification { font-size: 13px; }
   .watchlist-scroll-region { max-height: none; overflow: visible; scrollbar-gutter: auto; }
   .research-library-page .research-card-grid { grid-template-columns: minmax(0,1fr); }
   .research-library-page .research-card { min-height: 0; }
