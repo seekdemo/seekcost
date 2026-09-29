@@ -838,7 +838,7 @@ button:disabled { cursor: not-allowed; }
 /* Tool directory: preserve the desktop grid and use a compact two-column feed on phones. */
 @media (max-width: 639px) {
   /* Quant monitoring: keep the decision loop compact and thumb-friendly on phones. */
-  .quant-strategy-switcher > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .quant-strategy-switcher > .grid { grid-template-columns: minmax(0, 1fr); }
   .quant-strategy-tab { min-height: 4.6rem; padding: .65rem .7rem; }
   .quant-strategy-tab__title { display: block; overflow-wrap: anywhere; line-height: 1.35; }
   .quant-strategy-tab .text-muted { line-height: 1.35; }
@@ -1481,6 +1481,7 @@ html[data-theme="light"] .research-decision-context__summary [data-tone="due"] s
   .research-library-hero__description { font-size: .82rem; }
   .research-library-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .research-search { grid-column: 1 / -1; }
+  .research-create-button { grid-column: 1 / -1; }
   .research-command-bar { top: 3.8rem; gap: .35rem; margin-inline: -.1rem; }
   .research-segmented { gap: .08rem; }
   .research-segmented button { min-height: 42px; padding-inline: .62rem; font-size: .68rem; }

@@ -151,19 +151,19 @@ function AssetDetailContent() {
           <span>/</span>
           <span className="text-primary font-semibold">{data.zone === "invest" ? data.name : data.symbol}</span>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={openEdit}
-            className="rounded-lg border border-themed px-3 py-1.5 text-sm text-secondary transition hover:border-[var(--border-hover)] hover:text-accent">
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-themed px-3 text-sm font-medium leading-none text-secondary transition-colors hover:border-[var(--border-hover)] hover:text-primary">
             {t("assets.edit")}
           </button>
           <Link href={`/trade?asset=${data.id}`}
-            className="rounded-lg bg-accent bg-accent-hover px-3 py-1.5 text-sm font-semibold transition">
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-transparent bg-accent bg-accent-hover px-3 text-sm font-semibold leading-none text-on-accent transition-colors">
             {t(data.zone === "invest" ? "assets.recordInvestment" : "assets.recordTrade")}
           </Link>
           {/* 更多操作 */}
           <div className="relative">
-            <button onClick={() => setShowActions(!showActions)}
-              className="rounded-lg border border-themed px-2 py-1.5 text-sm text-secondary transition hover:text-primary">
+            <button onClick={() => setShowActions(!showActions)} aria-label={t("assets.manage")}
+              className="inline-flex min-h-11 w-11 items-center justify-center rounded-lg border border-themed text-sm leading-none text-secondary transition-colors hover:border-[var(--border-hover)] hover:text-primary">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
               </svg>
@@ -192,7 +192,7 @@ function AssetDetailContent() {
             )}
           </div>
           <button onClick={() => router.back()}
-            className="rounded-lg border border-themed px-3 py-1.5 text-sm text-secondary transition hover:text-primary">
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-themed px-3 text-sm font-medium leading-none text-secondary transition-colors hover:border-[var(--border-hover)] hover:text-primary">
             {t("assets.back")}
           </button>
         </div>
@@ -270,7 +270,7 @@ function AssetDetailContent() {
               <span className="text-base text-secondary sm:text-lg">{data.zone === "invest" ? data.symbol : data.name}</span>
               {data.is_zero_cost && <span className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-bold text-yellow-300">{t("assets.zeroCost")}</span>}
             </div>
-            <div className="mt-2 flex gap-2 flex-wrap">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-2 py-0.5 text-xs ${data.zone === "active" ? "bg-brand-soft" : data.zone === "invest" ? "bg-purple-500/20 text-purple-300" : "bg-blue-500/20 text-blue-300"}`}>
                 {t(ZONE_KEY_MAP[data.zone])}
               </span>
@@ -284,7 +284,6 @@ function AssetDetailContent() {
                 </span>
               )}
               {!data.is_cash && <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-secondary">{t(CAT_KEY_MAP[data.category])}</span>}
-              {/* 标签 */}
               {(data.tags || []).map(tag => (
                 <span key={tag.id} className="group/tag inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all"
                   style={{ backgroundColor: `${tag.color}22`, color: tag.color }}>
@@ -299,15 +298,17 @@ function AssetDetailContent() {
                   </button>
                 </span>
               ))}
-              <div className="relative">
+              <div className="relative flex items-center">
                 <button onClick={() => setShowTagPicker(!showTagPicker)}
-                  className={`rounded-full border border-dashed px-2.5 py-0.5 text-[11px] transition-all ${showTagPicker ? "border-[var(--accent)] text-accent bg-[var(--accent-bg)]" : "border-[var(--border)] text-muted hover:text-primary hover:border-[var(--border-hover)]"}`}>
-                  + {t("assets.tags")}
+                  className="inline-flex items-center justify-center rounded-full text-xs leading-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]">
+                  <span className={`inline-flex h-6 items-center rounded-full border border-dashed px-2.5 transition-colors ${showTagPicker ? "border-[var(--accent)] text-accent bg-[var(--accent-bg)]" : "border-[var(--border)] text-muted hover:text-primary hover:border-[var(--border-hover)]"}`}>
+                    + {t("assets.tags")}
+                  </span>
                 </button>
                 {showTagPicker && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowTagPicker(false)} />
-                    <div className="absolute top-8 left-0 z-50 w-64 rounded-xl border border-themed bg-surface p-3 shadow-2xl animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded-xl border border-themed bg-surface p-3 shadow-2xl animate-in fade-in slide-in-from-top-1 duration-150 sm:left-0 sm:right-auto">
                       {/* 已有标签列表 */}
                       {(() => {
                         const available = allTags.filter(t => !(data.tags || []).some(dt => dt.id === t.id));

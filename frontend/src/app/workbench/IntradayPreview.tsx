@@ -111,6 +111,10 @@ export default function IntradayPreview({
       </div>
       {refreshBlocked && <div className="intraday-preview-cooldown">{t("intraday.cooldown")}</div>}
       {data?.refresh_error && <div className="intraday-preview-refresh-error">{t("intraday.refreshError", { message: data.refresh_error })}</div>}
+      {items.length > 2 && <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-themed px-4 py-2.5 sm:px-5">
+        <span className="text-xs leading-5 text-secondary">{t("ux.previewSummary", { shown: visibleItems.length, count: items.length })}</span>
+        <button type="button" className="ui-button shrink-0" aria-expanded={expanded} aria-controls="intraday-preview-rows" onClick={() => setExpanded(value => !value)}>{t(expanded ? "ux.collapsePreview" : "ux.expandPreview", { count: items.length })}</button>
+      </div>}
       {(loading || refreshing) && !items.length ? (
         <div className="intraday-preview-loading"><span /><span /><span /></div>
       ) : items.length ? (
@@ -120,10 +124,6 @@ export default function IntradayPreview({
       ) : (
         <div className="intraday-preview-empty">{t("intraday.noStocks")}</div>
       )}
-      {items.length > 2 && <div className="flex flex-wrap items-center justify-between gap-2 border-t border-themed px-4 py-2">
-        <span className="text-xs text-secondary">{t("ux.previewSummary", { shown: visibleItems.length, count: items.length })}</span>
-        <button type="button" className="ui-button" aria-expanded={expanded} aria-controls="intraday-preview-rows" onClick={() => setExpanded(value => !value)}>{t(expanded ? "ux.collapsePreview" : "ux.expandPreview", { count: items.length })}</button>
-      </div>}
       {data && data.total_count > data.requested_count && (
         <div className="intraday-preview-footer">{t("intraday.showing", { requested: data.requested_count, total: data.total_count })}</div>
       )}

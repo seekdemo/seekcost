@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import SiteFooter from "@/components/SiteFooter";
+import NavigationScroll from "@/components/NavigationScroll";
 import ThemeProvider from "@/components/ThemeProvider";
 import I18nProvider from "@/components/I18nProvider";
 import "./globals.css";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-page text-primary antialiased">
         <I18nProvider>
           <ThemeProvider>
+            <NavigationScroll />
             <Navbar />
             <main id="main-content" tabIndex={-1} className="app-main">{children}</main>
             <SiteFooter />

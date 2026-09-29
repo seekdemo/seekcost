@@ -795,8 +795,8 @@ function AssetsContent() {
         </div>
       )}
 
-      {/* 筛选标签 — 区域 + 市场 合并一行 */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 flex-wrap">
+      {/* 筛选标签 — 窄屏保持一行，可横向滑动 */}
+      <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto pb-1 whitespace-nowrap">
         {[
           { key: "all" as const, label: t("assets.all", { count: activeAssets.length }), color: "bg-accent" },
           { key: "active" as const, label: t("assets.activeShort", { count: activeCount }), color: "bg-accent" },

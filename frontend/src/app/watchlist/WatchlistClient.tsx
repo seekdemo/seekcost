@@ -1810,7 +1810,7 @@ function FunnelView({
                 <select
                   value={sort}
                   onChange={(event) => setSort(event.target.value as WatchSort)}
-                  className="h-10 w-full appearance-none rounded-lg border border-themed bg-input py-2 pl-3 pr-9 text-sm text-secondary outline-none transition hover:text-primary focus:border-[var(--accent)] sm:w-32"
+                  className="h-10 w-full appearance-none rounded-lg border border-themed bg-input py-2 pl-3 pr-9 text-sm text-secondary outline-none transition hover:text-primary focus:border-[var(--accent)] sm:w-40"
                   aria-label={t("watchlist.sortAria")}
                 >
                   <option value="default">{t("watchlist.sortDefault")}</option>
@@ -1871,12 +1871,20 @@ function FunnelView({
         </div>
 
         <div className="watchlist-scroll-region max-h-[68vh] overflow-auto">
-          <div className="watchlist-market-header hidden gap-3 border-b border-themed bg-page px-4 py-2 text-xs text-muted md:grid">
+          <div className="watchlist-market-header hidden items-center gap-3 border-b border-themed bg-page px-4 py-2 text-xs text-muted md:grid">
             <button
+              type="button"
               onClick={() => setSelectedIds(allFilteredSelected ? selectedIds.filter((id) => !filteredIds.includes(id)) : uniqueValues([...selectedIds, ...filteredIds]))}
-              className="text-left text-accent"
+              role="checkbox"
+              aria-checked={allFilteredSelected ? true : selectedInView.length > 0 ? "mixed" : false}
+              aria-label={allFilteredSelected ? t("watchlist.clearSelection") : t("watchlist.selectAll")}
+              title={allFilteredSelected ? t("watchlist.clearSelection") : t("watchlist.selectAll")}
+              disabled={filtered.length === 0}
+              className={`inline-flex h-5 w-5 items-center justify-center rounded border text-xs transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
+                allFilteredSelected ? "border-[var(--accent)] bg-accent text-on-accent" : "border-themed text-muted hover:border-[var(--border-hover)]"
+              }`}
             >
-              {allFilteredSelected ? t("watchlist.clear") : t("watchlist.selectAll")}
+              {allFilteredSelected ? "✓" : selectedInView.length > 0 ? "−" : null}
             </button>
             <span>{t("watchlist.symbol")}</span>
             <span>{t("watchlist.nameClue")}</span>
