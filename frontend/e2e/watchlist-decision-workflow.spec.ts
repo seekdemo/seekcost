@@ -73,7 +73,11 @@ async function installWatchlist(
   await page.route("**/api/v1/watchlist/memos**", (route) => json(route, []));
 }
 
-test("the decision funnel isolates radar noise and keeps the full research route", async ({ page }) => {
+test("the decision funnel isolates radar noise and opens research in a new tab without loading legacy memos", async ({ page }) => {
+  const memoRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/v1/watchlist/memos")) memoRequests.push(request.url());
+  });
   await installWatchlist(page);
   await page.goto("/watchlist");
 
@@ -85,8 +89,13 @@ test("the decision funnel isolates radar noise and keeps the full research route
   const drawer = page.getByRole("dialog", { name: "Quick decision" });
   await expect(drawer).toBeVisible();
   await expect(drawer.getByText("Track durable demand", { exact: true })).toBeVisible();
-  await drawer.getByRole("link", { name: "Full company research" }).click();
-  await expect(page).toHaveURL(/\/watchlist\/1$/);
+  const [researchPage] = await Promise.all([
+    page.context().waitForEvent("page"),
+    drawer.getByRole("link", { name: "Full company research" }).click(),
+  ]);
+  await expect(researchPage).toHaveURL(/\/watchlist\/1$/);
+  await expect(page).toHaveURL(/\/watchlist$/);
+  expect(memoRequests).toHaveLength(0);
 });
 
 test("slash, J K and stage shortcuts operate the active decision row", async ({ page }) => {
