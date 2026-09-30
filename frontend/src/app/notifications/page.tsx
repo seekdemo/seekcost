@@ -19,7 +19,10 @@ function Inbox() {
     catch (e) { if (id === generation.current) setError(e instanceof Error ? e.message : "Could not load notifications"); }
     finally { if (id === generation.current) setLoading(false); }
   }, [unread]);
-  useEffect(() => { void load(); return () => { generation.current++; }; }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => { window.clearTimeout(timer); generation.current++; };
+  }, [load]);
   async function markRead(id?: number) {
     if (busy) return; setBusy(true); setError("");
     try {

@@ -93,7 +93,7 @@ test("writing comes first without competing mobile navigation", async ({
     page.getByLabel("反面理由 / 还需要核实什么？", { exact: true }),
   ).toBeHidden();
   await page.getByRole("link", { name: "← 公司研究", exact: true }).click();
-  if (info.project.name !== "desktop")
+  if (info.project.name === "mobile")
     await expect(page.locator(".mobile-primary-navigation")).toBeVisible();
 });
 

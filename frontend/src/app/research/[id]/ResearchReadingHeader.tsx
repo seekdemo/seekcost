@@ -12,7 +12,7 @@ export interface MarkdownSection {
 export function splitMarkdownSections(source: string): MarkdownSection[] {
   const sections: MarkdownSection[] = [];
   let fenced = false;
-  let preamble: string[] = [];
+  const preamble: string[] = [];
   let current: { heading: string; body: string[] } | null = null;
   for (const line of source.split("\n")) {
     if (/^\s*```/.test(line)) {
