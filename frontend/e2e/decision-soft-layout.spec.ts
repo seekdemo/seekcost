@@ -31,7 +31,7 @@ async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 }
 
-test('four source fields and real source dates stay readable with a 3:2 desktop table', async ({ page }, testInfo) => {
+test('source fields stay readable inside the shared page boundaries with a bounded preview', async ({ page }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/decision');
@@ -63,8 +63,26 @@ test('four source fields and real source dates stay readable with a 3:2 desktop 
     await expect(page.locator('.decision-table-head')).toHaveText(/分类.*标的 \/ 研究主题.*触发原因.*日期/);
     const board = await page.locator('.decision-board').boundingBox();
     const workspace = await page.locator('.decision-workspace').boundingBox();
-    expect(board!.width / workspace!.width).toBeCloseTo(0.6, 1);
-    expect((await page.locator('.decision-inbox').boundingBox())!.x).toBe(24);
+    const preview = await page.locator('.decision-preview--desktop').boundingBox();
+    expect(board!.width / workspace!.width).toBeGreaterThan(0.63);
+    expect(preview!.width).toBeGreaterThanOrEqual(280);
+    expect(preview!.width).toBeLessThanOrEqual(420);
+    const boundaries = await page.evaluate(() => {
+      const main = document.querySelector('.app-main')!;
+      const nav = document.querySelector('.workspace-section-navigation')!;
+      const inbox = document.querySelector('.decision-inbox')!;
+      return {
+        mainWidth: main.getBoundingClientRect().width,
+        navWidth: nav.getBoundingClientRect().width,
+        inboxLeft: inbox.getBoundingClientRect().left,
+        navContentLeft: nav.getBoundingClientRect().left + parseFloat(getComputedStyle(nav).paddingLeft),
+        padding: parseFloat(getComputedStyle(main).paddingLeft),
+      };
+    });
+    expect(boundaries.mainWidth).toBeLessThanOrEqual(1360);
+    expect(boundaries.mainWidth).toBe(boundaries.navWidth);
+    expect(boundaries.inboxLeft).toBe(boundaries.navContentLeft);
+    expect(boundaries.padding).toBe(40);
   }
   await expect(page.getByText('观察、判断与回顾', { exact: true })).toHaveCount(0);
   await expect(page.getByText('近期变化', { exact: true })).toHaveCount(0);
@@ -163,7 +181,7 @@ test('dark and custom themes use action and selection tokens with readable sourc
       const color = (token: string) => { probe.style.color = `var(${token})`; return getComputedStyle(probe).color; };
       const action = getComputedStyle(document.querySelector('.decision-primary')!);
       const row = getComputedStyle(document.querySelector('.decision-thought[data-selected=true]')!);
-      const result = [[action.color, color('--action-fg')], [action.backgroundColor, color('--action-bg')], [row.backgroundColor, color('--selected-bg')], [row.borderLeftColor, color('--selected-line')]];
+      const result = [[action.color, color('--strong-action-fg')], [action.backgroundColor, color('--strong-action-bg')], [row.backgroundColor, color('--selected-bg')], [row.borderLeftColor, color('--selected-line')]];
       for (const selector of ['.decision-thought__reason', '.decision-thought__date']) result.push([getComputedStyle(document.querySelector(selector)!).color, color('--text-secondary')]);
       probe.remove(); return result;
     });
