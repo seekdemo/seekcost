@@ -263,7 +263,7 @@ function DetailContent({ stockId }: { stockId: number }) {
         </div>
       </header>
 
-      <DailyKSection stock={profile.stock} bars={priceVolume?.items || []} movingAverages={priceVolume?.moving_averages || []} observation={priceVolume?.observation || null} range={kRange} onRangeChange={setKRange} onRetry={() => setPriceRetry((value) => value + 1)} status={priceStatus} asOf={priceVolume?.as_of || null} source={priceVolume?.source || ""} />
+      <DailyKSection market={priceVolume?.market} stock={profile.stock} bars={priceVolume?.items || []} movingAverages={priceVolume?.moving_averages || []} observation={priceVolume?.observation || null} range={kRange} onRangeChange={setKRange} onRetry={() => setPriceRetry((value) => value + 1)} status={priceStatus} asOf={priceVolume?.as_of || null} source={priceVolume?.source || ""} />
       {priceStatus !== "loading" && priceStatus !== "error" && <PriceRiskPanel assessment={priceVolume?.risk_assessment} currency={priceVolume?.currency || ""} />}
 
       <div className="my-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border)] p-4">

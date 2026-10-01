@@ -6,6 +6,8 @@ import { useI18n } from "@/components/I18nProvider";
 import type { DailyBar, KRange, MovingAveragePoint, PriceVolumeObservation, WatchlistStock } from "@/lib/types";
 
 import KLineChart from "./KLineChart";
+import IntradayChart from "./IntradayChart";
+import { inferIntradayMarket } from "./intradaySeries";
 import MovingAverageLegend, { type MovingAveragePeriod } from "./MovingAverageLegend";
 
 export type DailyKStatus = "loading" | "ready" | "empty" | "stale" | "error";
@@ -21,6 +23,7 @@ function money(value: number, locale: string) {
 
 export default function DailyKSection({
   stock,
+  market,
   bars,
   movingAverages,
   range,
@@ -31,6 +34,7 @@ export default function DailyKSection({
   source,
 }: {
   stock: WatchlistStock;
+  market?: string;
   bars: DailyBar[];
   movingAverages: MovingAveragePoint[];
   observation: PriceVolumeObservation | null;
@@ -42,6 +46,10 @@ export default function DailyKSection({
   source: string;
 }) {
   const { localeTag, t } = useI18n();
+  const [view, setView] = useState<"daily" | "intraday">("daily");
+  const zh = localeTag.startsWith("zh");
+  const symbol = stock.symbol.trim().toUpperCase();
+  const quoteMarket = market || inferIntradayMarket(symbol, stock.sector);
   const ranges: KRange[] = ["1mo", "3mo", "6mo", "1y"];
   const [activeDate, setActiveDate] = useState<string | null>(null);
   const [enabledPeriods, setEnabledPeriods] = useState<Set<MovingAveragePeriod>>(
@@ -93,9 +101,15 @@ export default function DailyKSection({
   return (
     <section aria-labelledby="daily-k-title" className="mb-8 min-w-0 rounded-xl border border-themed bg-surface p-4 sm:p-6">
       <div className="flex flex-col gap-4 border-b border-themed pb-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0"><p className="text-xs font-medium uppercase text-muted">{t("dossier.marketBehavior")}</p><h2 id="daily-k-title" className="mt-1 text-xl font-semibold text-primary">{t("dossier.dailyKTitle")}</h2><p className="mt-1 text-xs text-muted">{stock.symbol}{asOf ? ` · ${t("dossier.asOf")} ${new Date(asOf).toLocaleDateString(localeTag)}` : ""}{source ? ` · ${source === "yahoo_finance" ? "Yahoo Finance" : source}` : ""}</p></div>
-        <div aria-label={t("dossier.chartRange")} className="grid grid-cols-4 rounded-md border border-themed p-1">{ranges.map((item) => <button key={item} type="button" onClick={() => onRangeChange(item)} aria-pressed={range === item} className={`min-h-10 px-3 text-xs ${range === item ? "rounded bg-accent text-on-accent" : "text-secondary hover:text-primary"}`}>{t(`dossier.range${item}`)}</button>)}</div>
+        <div className="min-w-0"><p className="text-xs font-medium uppercase text-muted">{t("dossier.marketBehavior")}</p><h2 id="daily-k-title" className="mt-1 text-xl font-semibold text-primary">{view === "daily" ? t("dossier.dailyKTitle") : zh ? "分时走势" : "Intraday chart"}</h2><p className="mt-1 text-xs text-muted">{stock.symbol}{view === "daily" && asOf ? ` · ${t("dossier.asOf")} ${new Date(asOf).toLocaleDateString(localeTag)}` : ""}{view === "daily" && source ? ` · ${source === "yahoo_finance" ? "Yahoo Finance" : source}` : ""}</p></div>
+        <div className="flex flex-wrap gap-2">
+          <div aria-label={zh ? "图表类型" : "Chart type"} className="flex rounded-md border border-themed p-1">
+            {(["intraday", "daily"] as const).map(item => <button key={item} type="button" aria-pressed={view === item} onClick={() => setView(item)} className={`min-h-11 px-3 text-xs ${view === item ? "rounded bg-accent text-on-accent" : "text-secondary hover:text-primary"}`}>{item === "daily" ? zh ? "日 K" : "Daily" : zh ? "分时" : "Intraday"}</button>)}
+          </div>
+        {view === "daily" && <div aria-label={t("dossier.chartRange")} className="grid grid-cols-4 rounded-md border border-themed p-1">{ranges.map((item) => <button key={item} type="button" onClick={() => onRangeChange(item)} aria-pressed={range === item} className={`min-h-10 px-3 text-xs ${range === item ? "rounded bg-accent text-on-accent" : "text-secondary hover:text-primary"}`}>{t(`dossier.range${item}`)}</button>)}</div>}
+        </div>
       </div>
+      {view === "intraday" ? <IntradayChart key={`${quoteMarket}:${symbol}`} symbol={stock.symbol} market={quoteMarket} /> : <>
       {metrics && <div className="mt-4 flex flex-wrap items-baseline gap-x-5 gap-y-1 tabular-nums">
         <span className="text-xs text-secondary">{t("risk.dailyPrice")}</span>
         <strong className="text-3xl font-semibold text-primary">{money(metrics.close, localeTag)}</strong>
@@ -169,6 +183,7 @@ export default function DailyKSection({
           [t("risk.dailyPrice"), metrics ? money(metrics.close, localeTag) : "--"],
         ].map(([label, value]) => <div key={label} className="bg-page p-4"><p className="text-xs text-muted">{label}</p><p className="mt-2 text-sm font-semibold text-primary">{value}</p></div>)}
       </div>
+      </>}
     </section>
   );
 }
