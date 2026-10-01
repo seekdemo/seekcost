@@ -27,28 +27,28 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("light workspace uses the approved soft palette and navigation", async ({ page }) => {
+test("light workspace uses the Futu-inspired palette and navigation", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/decision");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(250, 250, 247)");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(245, 246, 248)");
   const active = page.getByTestId("section-navigation").locator('a[aria-current="page"]');
   await expect(active).toBeVisible();
-  await expect(active).toHaveCSS("color", "rgb(95, 115, 128)");
+  await expect(active).toHaveCSS("color", "rgb(191, 75, 0)");
   await expect(active).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  expect(await active.evaluate(el => getComputedStyle(el, "::after").backgroundColor)).toBe("rgb(131, 150, 161)");
+  expect(await active.evaluate(el => getComputedStyle(el, "::after").backgroundColor)).toBe("rgb(255, 106, 0)");
   const primary = page.viewportSize()!.width >= 768
     ? page.getByTestId("primary-navigation").locator('a[aria-current="page"]')
     : page.locator('.mobile-primary-navigation a[aria-current="page"]');
   await expect(primary).toBeVisible();
-  await expect(primary).toHaveCSS("color", "rgb(95, 115, 128)");
+  await expect(primary).toHaveCSS("color", "rgb(191, 75, 0)");
   await expect(primary).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   const expected = {
-    "--page-bg": "#FAFAF7", "--surface": "#FEFEFC", "--text-primary": "#3B4146",
-    "--text-secondary": "#67716F", "--accent": "#5F7380", "--border": "#E5E7E2",
-    "--selected-bg": "#EEF2F3", "--selected-line": "#8396A1", "--action-bg": "#E3EAED",
-    "--action-fg": "#405763", "--action-border": "#C7D2D8",
+    "--page-bg": "#F5F6F8", "--surface": "#FFFFFF", "--text-primary": "#20242B",
+    "--text-secondary": "#59616E", "--accent": "#BF4B00", "--border": "#E3E6EB",
+    "--selected-bg": "#FFF5ED", "--selected-line": "#FF6A00", "--action-bg": "#FFF0E5",
+    "--action-fg": "#A64000", "--action-border": "#E6C7B2",
   };
   expect(await page.evaluate(keys => {
     const style = getComputedStyle(document.documentElement);
@@ -120,7 +120,7 @@ test("stored dark, custom and legacy themes keep derived controls and custom col
   await expectDerivedTokens(page);
   await page.evaluate(() => localStorage.setItem("zb_theme", "light"));
   await page.reload();
-  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(250, 250, 247)");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(245, 246, 248)");
   expect(await page.evaluate(() => document.documentElement.style.getPropertyValue("--accent"))).toBe("");
   expect(await page.evaluate(() => localStorage.getItem("zb_custom_color"))).toBe("#8db9aa");
   expect(errors).toEqual([]);

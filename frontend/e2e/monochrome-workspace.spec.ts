@@ -35,7 +35,7 @@ test('decision navigation keeps four top-level destinations', async ({ page }) =
   await expect(nav).toContainText('股票池');
   await expect(nav).toContainText('研究笔记');
   await expect(nav).toContainText('提醒');
-  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(250, 250, 247)');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(245, 246, 248)');
   await expect(page.getByTestId('workspace-sidebar')).toHaveCount(0);
   if (page.viewportSize()!.width >= 768) {
     const primary = page.getByTestId('primary-navigation');

@@ -1,16 +1,17 @@
-/* Soft research workspace. Market and risk colors retain their own meaning. */
+/* Futu-inspired neutral workspace with restrained orange accents. Market and risk colors retain their own meaning. */
 /* Legacy presets own their palette in globals.css; only current themes use this fallback. */
 :root:where(:not([data-theme]), [data-theme="light"], [data-theme="dark"], [data-theme="custom"]) {
-  --accent: #5F7380; --accent-light: #8396A1; --accent-dark: #405763;
-  --accent-bg: rgba(95,115,128,.08); --accent-bg-hover: rgba(95,115,128,.12);
-  --page-bg: #FAFAF7; --nav-bg: #FAFAF7; --surface: #FEFEFC;
-  --surface-hover: #F3F4F0; --surface-alt: #F3F4F0; --surface-raised: #FEFEFC;
-  --surface-inset: #F3F4F0; --input-bg: #FEFEFC; --border: #E5E7E2;
-  --border-hover: #C7D2D8; --progress-bg: #E5E7E2;
-  --text-primary: #3B4146; --text-secondary: #67716F; --text-muted: #79827F;
-  --text-on-accent: #FEFEFC; --ring: rgba(95,115,128,.25);
+  --accent: #BF4B00; --accent-light: #FF6A00; --accent-dark: #A64000;
+  --accent-bg: rgba(255,106,0,.06); --accent-bg-hover: rgba(255,106,0,.1);
+  --page-bg: #F5F6F8; --nav-bg: #FFFFFF; --surface: #FFFFFF;
+  --surface-hover: #F1F3F5; --surface-alt: #F1F3F5; --surface-raised: #FFFFFF;
+  --surface-inset: #F1F3F5; --input-bg: #FFFFFF; --border: #E3E6EB;
+  --border-hover: #E6C7B2; --progress-bg: #E3E6EB;
+  --text-primary: #20242B; --text-secondary: #59616E; --text-muted: #65707D;
+  --text-on-accent: #FFFFFF; --ring: rgba(255,106,0,.25);
 }
 :root {
+  --strong-action-bg: var(--accent); --strong-action-fg: var(--text-on-accent);
   --action-bg: color-mix(in srgb, var(--accent) 12%, var(--surface));
   --action-fg: var(--accent);
   --action-border: color-mix(in srgb, var(--accent) 30%, var(--border));
@@ -29,15 +30,16 @@
   --status-risk: #f26d72; --status-risk-bg: rgba(242,109,114,.12);
 }
 html[data-theme="light"] {
-  --accent: #5F7380; --accent-light: #8396A1; --accent-dark: #405763; --text-on-accent: #FEFEFC;
-  --page-bg: #FAFAF7; --nav-bg: #FAFAF7; --surface: #FEFEFC; --surface-alt: #F3F4F0;
-  --surface-hover: #F3F4F0; --input-bg: #FEFEFC; --border: #E5E7E2;
-  --surface-inset: #F3F4F0; --surface-raised: #FEFEFC; --border-hover: #C7D2D8;
-  --text-primary: #3B4146; --text-secondary: #67716F; --text-muted: #79827F;
-  --accent-bg: rgba(95,115,128,.08); --accent-bg-hover: rgba(95,115,128,.12);
-  --ring: rgba(95,115,128,.25); --progress-bg: #E5E7E2;
-  --action-bg: #E3EAED; --action-fg: #405763; --action-border: #C7D2D8;
-  --selected-bg: #EEF2F3; --selected-line: #8396A1;
+  --accent: #BF4B00; --accent-light: #FF6A00; --accent-dark: #A64000; --text-on-accent: #FFFFFF;
+  --page-bg: #F5F6F8; --nav-bg: #FFFFFF; --surface: #FFFFFF; --surface-alt: #F1F3F5;
+  --surface-hover: #F1F3F5; --input-bg: #FFFFFF; --border: #E3E6EB;
+  --surface-inset: #F1F3F5; --surface-raised: #FFFFFF; --border-hover: #E6C7B2;
+  --text-primary: #20242B; --text-secondary: #59616E; --text-muted: #65707D;
+  --accent-bg: rgba(255,106,0,.06); --accent-bg-hover: rgba(255,106,0,.1);
+  --ring: rgba(255,106,0,.25); --progress-bg: #E3E6EB;
+  --strong-action-bg: #FF6A00; --strong-action-fg: #261A10;
+  --action-bg: #FFF0E5; --action-fg: #A64000; --action-border: #E6C7B2;
+  --selected-bg: #FFF5ED; --selected-line: #FF6A00;
   --status-entry: #237a4b; --status-entry-bg: rgba(35,122,75,.08);
   --status-watch: #0284c7; --status-watch-bg: rgba(2,132,199,.08);
   --status-extended: #b45309; --status-extended-bg: rgba(180,83,9,.1);
@@ -59,7 +61,8 @@ html[data-theme="dark"] {
   min-height: 40px; border-radius: var(--control-radius); font-size: 13px;
   font-weight: 550; box-shadow: none;
 }
-.ui-button--primary, .page-shell .ui-button--primary { font-weight: 600; }
+.ui-button--primary, .page-shell .ui-button--primary { font-weight: 600; background: var(--strong-action-bg); color: var(--strong-action-fg); }
+.ui-button--primary:hover, .page-shell .ui-button--primary:hover { background: var(--strong-action-bg); color: var(--strong-action-fg); filter: brightness(.96); }
 .ui-surface, .auth-card {
   border-radius: var(--panel-radius); border-color: var(--border);
   background: var(--surface); box-shadow: var(--panel-shadow);
@@ -234,7 +237,7 @@ body > [role="dialog"][aria-modal="true"]:not([data-research-overlay-priority]),
 /* Precision pass: page rhythm, content hierarchy and state consistency. */
 body { background: var(--page-bg); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans",sans-serif; }
 .app-main { width: 100%; max-width: 1360px; margin-inline: auto; padding: 32px 40px 64px; }
-.app-navigation { background: var(--page-bg); }
+.app-navigation { background: var(--nav-bg); }
 .site-footer > div { max-width: 1360px; padding-inline: 40px; }
 .app-navigation > div { max-width: 1360px; margin-inline: auto; padding-inline: 40px; }
 .workspace-topbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 64px; }

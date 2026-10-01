@@ -22,8 +22,8 @@ body:has(.decision-inbox) .workspace-section-navigation {
 .decision-inbox__header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 4px 0 20px; }
 .decision-inbox__header h1 { margin: 0; font-size: 30px; line-height: 1.25; font-weight: 600; letter-spacing: -.04em; }
 .decision-inbox__actions { display: flex; align-items: center; }
-.decision-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--action-border); background: var(--action-bg); color: var(--action-fg); font-size: 12px; font-weight: 600; line-height: 1.4; text-align: center; white-space: nowrap; }
-.decision-primary:hover { filter: brightness(.97); color: var(--action-fg); }
+.decision-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--strong-action-bg); background: var(--strong-action-bg); color: var(--strong-action-fg); font-size: 12px; font-weight: 600; line-height: 1.4; text-align: center; white-space: nowrap; }
+.decision-primary:hover { filter: brightness(.97); color: var(--strong-action-fg); }
 .decision-tabs { display: flex; gap: 28px; border-bottom: 1px solid var(--decision-line); }
 .decision-tabs button { position: relative; min-height: 44px; padding: 0 0 10px; color: var(--decision-muted); font-size: 13px; white-space: nowrap; cursor: pointer; }
 .decision-tabs button[aria-selected=true] { color: var(--decision-ink); font-weight: 600; }

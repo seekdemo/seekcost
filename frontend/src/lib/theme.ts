@@ -11,8 +11,8 @@ export interface PresetTheme {
 export const PRESET_THEMES: Record<"light" | "dark", PresetTheme> = {
   light: {
     label: "亮色",
-    color: "#5F7380",
-    preview: { page: "#FAFAF7", surface: "#FEFEFC", border: "#E5E7E2", line: "#8396A1" },
+    color: "#FF6A00",
+    preview: { page: "#F5F6F8", surface: "#FFFFFF", border: "#E3E6EB", line: "#FF6A00" },
   },
   dark: {
     label: "暗色",
