@@ -76,7 +76,7 @@ function AlertsContent() {
   const visibleRules = rules.filter(rule => (filter === "all" || (filter === "enabled" && rule.enabled) || (filter === "paused" && !rule.enabled) || (filter === "attention" && needsAttention(rule))) && `${rule.name} ${rule.symbol} ${rule.stock_name} ${rule.scope === "watchlist" ? "全部自选股 all watchlist" : ""}`.toLowerCase().includes(query.trim().toLowerCase()));
   return <div className="page-shell alerts-workspace mx-auto max-w-6xl pb-24">
     <header className="alerts-heading">
-      <div><p className="alerts-eyebrow">{text("价格观察", "PRICE WATCH")}</p><h1 className="page-title">{text("自定义提醒", "Custom alerts")}</h1><p className="page-description">{text("设好关注条件，不必反复盯盘。", "Set your conditions. Spend less time watching prices.")}</p></div>
+      <div><h1 className="page-title">{text("提醒", "Reminders")}</h1><p className="page-description">{text("设好关注条件，不必反复盯盘。", "Set your conditions. Spend less time watching prices.")}</p></div>
       {!editor && <div className="alerts-heading-actions"><Link href="/notifications" className="ui-button min-h-11">{text("通知中心", "Notifications")} <span aria-hidden="true">↗</span></Link><button ref={createRef} disabled={loading || busy !== null} onClick={() => openEditor()} className="ui-button alerts-primary">＋ {text("新建提醒", "New alert")}</button></div>}
     </header>
     {error && <div role="alert" className="alerts-message is-error">{error}<button disabled={loading} onClick={() => void load()} className="ui-button">{text("重新加载", "Reload")}</button></div>}

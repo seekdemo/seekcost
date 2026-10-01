@@ -385,6 +385,9 @@ function extractKnowledgeTags(text: string, allowedTags: string[]) {
 function normalizeNoteLinks(note: WatchNote, stocks: WatchStock[]) {
   const text = `${note.title || ""} ${note.content || ""}`;
   const explicitIds = new Set(note.stockIds || (note.stockId ? [note.stockId] : []));
+  for (const link of note.links || []) {
+    if (link.entityType === "watch_stock") explicitIds.add(String(link.entityId));
+  }
   const allowedTags = allowedKnowledgeTags(stocks);
   const symbolMentions = extractSymbolMentions(text);
   for (const symbol of symbolMentions) {
@@ -557,6 +560,22 @@ function WatchlistContent() {
   const [classificationSelections, setClassificationSelections] = useState<WatchlistClassificationSelection[]>([]);
   const [classificationError, setClassificationError] = useState("");
   const [backendMsg, setBackendMsg] = useState("");
+  const [notesMsg, setNotesMsg] = useState("");
+  const [notesLoading, setNotesLoading] = useState(false);
+
+  const loadNotes = useCallback(async (stockRows: WatchStock[], isCancelled: () => boolean = () => false) => {
+    setNotesLoading(true);
+    try {
+      const noteRows = await api.listNotes();
+      if (isCancelled()) return;
+      setNotes(noteRows.map((row) => apiNoteToWatchNote(row, stockRows)));
+      setNotesMsg("");
+    } catch (error) {
+      if (!isCancelled()) setNotesMsg(error instanceof Error ? error.message : t("research.loadFailed"));
+    } finally {
+      if (!isCancelled()) setNotesLoading(false);
+    }
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -564,17 +583,16 @@ function WatchlistContent() {
       try {
         setBackendMsg("");
         const backendStocks = (await api.listWatchStocks()).map(apiStockToWatchStock);
-        const noteRows = await api.listNotes();
         if (cancelled) return;
         setStocks(backendStocks);
-        setNotes(noteRows.map((row) => apiNoteToWatchNote(row, backendStocks)));
+        await loadNotes(backendStocks, () => cancelled);
       } catch (error) {
         if (!cancelled) setBackendMsg(error instanceof Error ? error.message : t("watchlist.backendFallback"));
       }
     };
     void loadBackend();
     return () => { cancelled = true; };
-  }, [t]);
+  }, [loadNotes, t]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -995,6 +1013,14 @@ function WatchlistContent() {
       {backendMsg && (
         <div className="inline-notice inline-notice--warning">
           {backendMsg}
+        </div>
+      )}
+      {notesMsg && (
+        <div role="alert" className="inline-notice inline-notice--warning flex items-center justify-between gap-3">
+          <span>{t("research.loadFailed")}: {notesMsg}</span>
+          <button type="button" disabled={notesLoading} onClick={() => void loadNotes(stocks)} className="ui-button shrink-0 border border-themed px-3 disabled:opacity-50">
+            {notesLoading ? t("research.loading") : t("ux.retry")}
+          </button>
         </div>
       )}
       {classificationError && !classificationPreview && (

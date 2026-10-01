@@ -1,0 +1,69 @@
+.reminder-navigation.alerts-hub-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.reminder-navigation.alerts-hub-nav a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 14px;
+  border-radius: var(--control-radius);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: anywhere;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.reminder-navigation.alerts-hub-nav a[aria-current="page"] {
+  background: var(--selected-bg);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.reminder-navigation.alerts-hub-nav a[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 14px;
+  bottom: 0;
+  height: 2px;
+  background: var(--selected-line);
+}
+
+.reminder-navigation.alerts-hub-nav a:hover {
+  background: var(--surface-hover);
+  color: var(--action-fg);
+}
+
+.reminder-navigation.alerts-hub-nav a:active {
+  background: var(--accent-bg-hover);
+  color: var(--text-primary);
+}
+
+.reminder-navigation.alerts-hub-nav a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .reminder-navigation.alerts-hub-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reminder-navigation.alerts-hub-nav a { transition: none; }
+}

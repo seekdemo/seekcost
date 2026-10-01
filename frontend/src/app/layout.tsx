@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import SiteFooter from "@/components/SiteFooter";
 import NavigationScroll from "@/components/NavigationScroll";
+import ReminderNavigation from "@/components/ReminderNavigation";
 import ThemeProvider from "@/components/ThemeProvider";
 import I18nProvider from "@/components/I18nProvider";
 import "./globals.css";
@@ -30,7 +31,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ThemeProvider>
             <NavigationScroll />
             <Navbar />
-            <main id="main-content" tabIndex={-1} className="app-main">{children}</main>
+            <main id="main-content" tabIndex={-1} className="app-main">
+              <ReminderNavigation />
+              {children}
+            </main>
             <SiteFooter />
           </ThemeProvider>
         </I18nProvider>

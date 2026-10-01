@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:styles": "node --test scripts/check-tailwind-sources.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

@@ -1,4 +1,5 @@
-@import "tailwindcss";
+/* Only scan application source; build caches can contain invalid utility tokens. */
+@import "tailwindcss" source("../");
 
 .alert-input { min-width: 0; width: 100%; min-height: 44px; border: 1px solid var(--border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary); padding: 10px 12px; font-size: 16px; }
 .alert-input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }

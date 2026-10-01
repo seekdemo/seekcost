@@ -287,7 +287,7 @@ function DetailContent({ stockId }: { stockId: number }) {
       <ResearchSopCard />
 
       <div className="mt-10 grid min-w-0 gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:gap-12">
-        <aside className="min-w-0 overflow-x-auto border-b border-themed pb-3 lg:sticky lg:top-20 lg:self-start lg:overflow-visible lg:border-b-0 lg:pb-0">
+        <aside className="min-w-0 overflow-x-auto border-b border-themed pb-3 lg:sticky lg:top-[calc(var(--app-nav-height,108px)+16px)] lg:self-start lg:overflow-visible lg:border-b-0 lg:pb-0">
           <p className="mb-3 px-3 text-xs font-medium uppercase text-muted">{t("dossier.directory")}</p>
           <ResearchNavigation items={orderedSections.map((section) => ({ key: section.key, label: t(SECTION_COPY[section.key].title), complete: isComplete(section) }))} />
         </aside>

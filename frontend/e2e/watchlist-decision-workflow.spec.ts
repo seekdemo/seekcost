@@ -54,6 +54,13 @@ async function installWatchlist(
     localStorage.setItem("zb_token", "watchlist-decision-token");
     localStorage.setItem("seekcost:locale", "en");
   });
+  // Keep fixture sessions isolated from a running backend and its auth checks.
+  await page.route("**/api/v1/**", (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/alerts/notifications")) return json(route, { items: [], unread_count: 0, next_cursor: null });
+    if (path.endsWith("/prices/intraday-quote")) return json(route, { status: "unavailable", points: [] });
+    return route.fulfill({ status: 404, json: { detail: `Unmocked API: ${path}` } });
+  });
   await page.route("**/api/v1/watchlist/stocks", (route) => json(route, stocks));
   await page.route(/\/api\/v1\/watchlist\/stocks\/(\d+)$/, async (route) => {
     const id = Number(route.request().url().match(/stocks\/(\d+)$/)?.[1]);
@@ -116,6 +123,15 @@ test("slash, J K and stage shortcuts operate the active decision row", async ({ 
 
 test("strike movement and Cmd K filtering stay focused and responsive", async ({ page }) => {
   await installWatchlist(page);
+  await page.route("**/api/v1/prices/intraday-quote**", (route) => {
+    if (new URL(route.request().url()).searchParams.get("symbol") !== "HIT") return route.fallback();
+    return json(route, {
+      status: "available", price: 79, previous_close: 80.7, change_pct: -2.1,
+      currency: "USD", source: "Workflow quote fixture", as_of: 1789155600,
+      session_date: "2026-09-11",
+      points: [80.2, 79.8, 79].map((price, index) => ({ timestamp: 1789155000 + index * 300, price })),
+    });
+  });
   await page.goto("/watchlist");
 
   await page.getByRole("button", { name: /Strike zone/ }).click();
@@ -142,7 +158,7 @@ test("low-frequency tools collapse after clicking outside", async ({ page }) => 
   await expect(page.getByRole("menu", { name: "Watchlist tools" })).toHaveCount(0);
 });
 
-test("industry navigation rejects narrative data and expands compact groups", async ({ page }) => {
+test("industry navigation rejects narrative data and expands compact groups", async ({ page, isMobile }) => {
   const narrative = "### Core view\n**This is research, not an industry.**\nhttps://example.test/%3FCIK%3D001";
   const rows = [
     stock({ id: 20, symbol: "DIRTY", name: "Narrative sector", stage: "radar", sector: narrative, industries: [] }),
@@ -154,9 +170,34 @@ test("industry navigation rejects narrative data and expands compact groups", as
       sector: `Industry ${index + 1}`,
       industries: [`Industry ${index + 1}`],
     })),
+    ...Array.from({ length: 5 }, (_, index) => stock({
+      id: 50 + index,
+      symbol: `RAW${index + 1}`,
+      name: `Unclassified company ${index + 1}`,
+      stage: "radar",
+      sector: narrative,
+      industries: [],
+    })),
   ];
   await installWatchlist(page, undefined, rows);
   await page.goto("/watchlist");
+
+  if (isMobile) {
+    await page.getByRole("button", { name: "Industry", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Industry view", exact: true })).toBeVisible();
+    await expect(page.locator("main")).not.toContainText("Core view");
+    await expect(page.locator("main")).not.toContainText("%3FCIK");
+    const lastIndustry = page.locator("section").filter({ has: page.getByRole("heading", { name: "Industry 8", exact: true }) });
+    await expect(lastIndustry.getByRole("heading", { name: "IND8", exact: true })).toBeVisible();
+
+    const unclassified = page.locator("section").filter({ has: page.getByRole("heading", { name: "Unclassified", exact: true }) });
+    await expect(unclassified.getByRole("heading", { name: "RAW5", exact: true })).toHaveCount(0);
+    await unclassified.getByRole("button", { name: "Show more (1)", exact: true }).click();
+    await expect(unclassified.getByRole("heading", { name: "RAW5", exact: true })).toBeVisible();
+    await unclassified.getByRole("button", { name: "Collapse unclassified", exact: true }).click();
+    await expect(unclassified.getByRole("heading", { name: "RAW5", exact: true })).toHaveCount(0);
+    return;
+  }
 
   const industry = page.getByRole("region", { name: "Industry" });
   await expect(industry).toBeVisible();

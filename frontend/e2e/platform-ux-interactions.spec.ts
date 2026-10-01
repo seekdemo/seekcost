@@ -21,7 +21,9 @@ test("navigation, preview disclosure and dialogs remain usable", async ({ page }
   await page.goto("/watchlist/earnings");
   const selected = page.getByTestId("section-navigation").locator('[aria-current="page"]');
   await expect(selected).toHaveCount(1);
-  await expect(selected).toHaveText("财报日历");
+  await expect(selected).toHaveText("提醒");
+  await expect(selected).toHaveAttribute("href", "/alerts");
+  await expect(page.getByTestId("reminder-navigation").locator('a[aria-current="page"]')).toHaveAttribute("href", "/watchlist/earnings");
   const selectedBox = await selected.boundingBox();
   expect(selectedBox!.x).toBeGreaterThanOrEqual(0);
   expect(selectedBox!.x + selectedBox!.width).toBeLessThanOrEqual(page.viewportSize()!.width);

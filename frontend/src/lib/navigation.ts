@@ -11,6 +11,17 @@ export const OPTIONAL_NAV_ITEMS: typeof NAV_ITEMS[number][] = [];
 export const DEFAULT_NAV_ITEMS = NAV_ITEMS.map((item) => item.href);
 export const USER_UPDATED_EVENT = "seekcost:user-updated";
 
+export const REMINDER_NAV: readonly { href: string; labelKey: string }[] = [
+  { href: "/alerts", labelKey: "nav.priceRules" },
+  { href: "/quant", labelKey: "nav.quantStrategies" },
+  { href: "/watchlist/earnings", labelKey: "watchlist.earningsTitle" },
+  { href: "/notifications", labelKey: "nav.notificationRecords" },
+];
+
+export function reminderDestinationForPath(pathname: string) {
+  return REMINDER_NAV.find(item => pathname === item.href || pathname.startsWith(`${item.href}/`));
+}
+
 export const SECTION_NAV: Record<Exclude<ProductArea, "workbench">, readonly { href: string; labelKey: string }[]> = {
   portfolio: [
     { href: "/portfolio", labelKey: "nav.portfolioOverview" },
@@ -19,13 +30,10 @@ export const SECTION_NAV: Record<Exclude<ProductArea, "workbench">, readonly { h
     { href: "/import/ibkr", labelKey: "nav.ibkrImport" },
   ],
   decision: [
-    { href: "/decision", labelKey: "nav.decisionOverview" },
-    { href: "/watchlist", labelKey: "nav.candidates" },
-    { href: "/quant", labelKey: "nav.quantStrategies" },
-    { href: "/alerts", labelKey: "ux.alerts" },
-    { href: "/watchlist/earnings", labelKey: "watchlist.earningsTitle" },
-    { href: "/research", labelKey: "nav.decisionRecords" },
-    { href: "/research/new", labelKey: "nav.recordDecision" },
+    { href: "/decision", labelKey: "nav.thinking" },
+    { href: "/watchlist", labelKey: "nav.watchlist" },
+    { href: "/research", labelKey: "nav.researchNotes" },
+    { href: "/alerts", labelKey: "nav.reminders" },
   ],
   tools: [
     { href: "/tools", labelKey: "nav.tools" },
@@ -53,6 +61,7 @@ export function isProductNavActive(pathname: string, href: string) {
 }
 
 export function isSectionNavActive(pathname: string, href: string) {
+  if (reminderDestinationForPath(pathname)) return href === "/alerts";
   if (href === "/research" && pathname.startsWith("/notes")) return true;
   if (href === "/portfolio" && pathname === "/dashboard") return true;
   const moreSpecific = Object.values(SECTION_NAV).flat().some((item) =>

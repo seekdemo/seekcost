@@ -28,8 +28,6 @@ export default function Navbar() {
   const [loggedIn, setLoggedIn] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
-  const tabsRef = useRef<HTMLDivElement>(null);
-  const [tabIndicator, setTabIndicator] = useState({ left: 0, width: 0, ready: false });
 
   useEffect(() => {
     const nav = navRef.current;
@@ -46,21 +44,6 @@ export default function Navbar() {
     const active = row?.querySelector<HTMLElement>('[aria-current="page"]');
     if (row && active) row.scrollLeft = active.offsetLeft - row.offsetLeft - (row.clientWidth - active.clientWidth) / 2;
   }, [pathname, loggedIn]);
-
-  useEffect(() => {
-    const row = tabsRef.current;
-    if (!row) return;
-    const measure = () => {
-      const active = row.querySelector<HTMLElement>('a[aria-current="page"]');
-      if (active) setTabIndicator({ left: active.offsetLeft, width: active.offsetWidth, ready: true });
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(row);
-    row.querySelectorAll("a").forEach((link) => observer.observe(link));
-    document.fonts?.ready.then(measure).catch(() => undefined);
-    return () => observer.disconnect();
-  }, [pathname, loggedIn, t]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -95,38 +78,29 @@ export default function Navbar() {
   return (
     <>
       <a href="#main-content" className="skip-to-content">{t("ux.skip")}</a>
-      <nav ref={navRef} className="app-navigation sticky top-0 z-50 border-b border-themed bg-page shadow-[0_1px_0_rgba(255,255,255,0.015)]" aria-label={t("nav.mainAria")}>
-        <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-3 px-3 sm:h-[60px] sm:px-6 lg:px-8">
-          <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-5 lg:gap-8">
-            <Link href="/" className="inline-flex h-11 shrink-0 items-center rounded-lg transition hover:opacity-90" aria-label={t("nav.homeAria")}>
+      <header ref={navRef} className="app-navigation sticky top-0 z-50 border-b border-themed bg-page">
+        <div className="workspace-topbar">
+          <div className="workspace-topbar__start">
+            <Link href="/" className="workspace-topbar__brand" aria-label={t("nav.homeAria")}>
               <PineLogo className="navbar-brand whitespace-nowrap" />
             </Link>
             {loggedIn && (
-              <div ref={tabsRef} className="platform-primary-tabs relative hidden min-w-0 items-center p-1 md:flex">
-                <span
-                  aria-hidden="true"
-                  className="platform-primary-tabs__indicator"
-                  style={{
-                    width: tabIndicator.width,
-                    transform: `translate3d(${tabIndicator.left}px,0,0)`,
-                    opacity: tabIndicator.ready ? 1 : 0,
-                  }}
-                />
+              <nav data-testid="primary-navigation" className="platform-primary-tabs" aria-label={t("nav.mainAria")}>
                 {visibleItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     aria-current={isProductNavActive(pathname, item.href) ? "page" : undefined}
-                    className="relative z-10 inline-flex h-9 items-center whitespace-nowrap rounded-[7px] px-3 text-[13px] font-medium transition-colors duration-200 lg:h-[34px] lg:px-3.5"
+                    className="workspace-primary-link"
                   >
                     {t(item.labelKey)}
                   </Link>
                 ))}
-              </div>
+              </nav>
             )}
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="workspace-topbar__account">
             <LanguageSwitcher compact={loggedIn} />
             {loggedIn ? (
               <>
@@ -140,7 +114,7 @@ export default function Navbar() {
                   <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--accent)]/15 bg-[var(--accent-bg)] text-xs font-bold text-accent">
                     {(user?.nickname || user?.username || "U").charAt(0).toUpperCase()}
                   </span>
-                  <span className="hidden xl:inline">{user?.nickname || user?.username}</span>
+                  <span className="workspace-account-name hidden xl:inline">{user?.nickname || user?.username}</span>
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -159,17 +133,13 @@ export default function Navbar() {
 
         {loggedIn && sectionItems.length > 1 && (
           <div className={`${researchFocus ? 'hidden lg:block' : ''} border-t border-[var(--border)]`}>
-            <div ref={sectionRef} data-testid="section-navigation" className="mx-auto flex max-w-[1600px] gap-1 overflow-x-auto px-3 py-1 sm:px-6 lg:px-8">
+            <div ref={sectionRef} data-testid="section-navigation" role="navigation" aria-label={t("nav.sectionAria")} className="workspace-section-navigation">
               {sectionItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   aria-current={isSectionNavActive(pathname, item.href) ? "page" : undefined}
-                  className={`inline-flex h-9 shrink-0 items-center rounded-[7px] px-3 text-xs transition ${
-                    isSectionNavActive(pathname, item.href)
-                      ? "bg-[var(--accent-bg)] font-medium text-accent"
-                      : "text-muted hover:bg-surface-hover hover:text-primary"
-                  }`}
+                  className="workspace-section-link"
                 >
                     {t(item.labelKey)}
                 </Link>
@@ -177,10 +147,10 @@ export default function Navbar() {
             </div>
           </div>
         )}
-      </nav>
+      </header>
 
       {loggedIn && !researchFocus && (
-        <nav className="mobile-primary-navigation fixed inset-x-0 bottom-0 z-[70] border-t border-themed bg-page px-2 pb-[max(.45rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-16px_40px_rgba(0,0,0,.18)] md:hidden" aria-label={t("nav.mobileAria")}>
+        <nav className="mobile-primary-navigation fixed inset-x-0 bottom-0 z-[70] border-t border-themed bg-page px-2 pb-[max(.45rem,env(safe-area-inset-bottom))] pt-1.5 md:hidden" aria-label={t("nav.mobileAria")}>
           <div className="mx-auto grid max-w-lg gap-1" style={{ gridTemplateColumns: `repeat(${visibleItems.length}, minmax(0, 1fr))` }}>
             {visibleItems.map((item) => (
               <Link

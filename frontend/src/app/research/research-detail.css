@@ -296,3 +296,6 @@ a.research-summary-chip:hover { border-color: var(--accent); color: var(--accent
   .research-reading-actions__comments { gap: .3rem; }
   .research-reading-header__confidence { margin-top: .2rem; }
 }
+
+/* Reading uses the app header directly once its document toolbar is removed. */
+.research-detail:not(:has(.research-document-bar)) .research-reading-progress { top: var(--app-nav-height, 108px); }

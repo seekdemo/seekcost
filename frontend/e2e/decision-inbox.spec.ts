@@ -78,7 +78,7 @@ test("a quiet watchlist does not become an artificial to-do", async ({ page }) =
   await expect(page.getByRole("tab", { name: /待思考\s*0/ })).toBeVisible();
   await expect(page.getByText("暂时没有需要重新检查的变化")).toBeVisible();
   await expect(page.locator(".decision-thought")).toHaveCount(0);
-  await expect(page.getByText("股票池共 20 个标的，未触发的无需处理")).toBeVisible();
+  await expect(page.locator('.decision-recent-notes a[href="/research/2"]')).toBeVisible();
 });
 
 test("recording from a price trigger starts with the company linked", async ({ page, isMobile }) => {

@@ -11,3 +11,5 @@ npm run dev
 ```
 
 默认访问 `http://localhost:3000`，并通过 `API_BASE_URL` 将 `/api/*` 代理到后端。
+
+运行 `npm run test:styles` 可验证 Tailwind 只扫描应用源码，避免临时构建文件污染生成的 CSS。

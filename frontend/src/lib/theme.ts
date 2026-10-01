@@ -1,7 +1,7 @@
 export type ThemeKey = "light" | "dark" | "emerald" | "blue" | "violet" | "rose" | "amber" | "cyan" | "custom";
 
 // emerald/blue/violet/rose/amber/cyan 已从预设入口下架，但保留 ThemeKey 与 CSS 变量，
-// 老用户本地/服务端存的这些主题仍然照常生效；新预设只提供经典白与暗色两套。
+// 老用户本地/服务端存的这些主题仍然照常生效；新预设只提供亮色与暗色两套。
 export interface PresetTheme {
   label: string;
   color: string;
@@ -11,13 +11,13 @@ export interface PresetTheme {
 export const PRESET_THEMES: Record<"light" | "dark", PresetTheme> = {
   light: {
     label: "亮色",
-    color: "#4f46e5",
-    preview: { page: "#f6f7fb", surface: "#ffffff", border: "#e4e8f0", line: "#e6eaf2" },
+    color: "#5F7380",
+    preview: { page: "#FAFAF7", surface: "#FEFEFC", border: "#E5E7E2", line: "#8396A1" },
   },
   dark: {
     label: "暗色",
-    color: "#6366f1",
-    preview: { page: "#0e0f12", surface: "#17181c", border: "#282a31", line: "#2b2e36" },
+    color: "#ededee",
+    preview: { page: "#161719", surface: "#1c1d20", border: "#303135", line: "#303135" },
   },
 };
 
