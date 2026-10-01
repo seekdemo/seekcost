@@ -64,7 +64,7 @@ test("mobile product navigation switches between decision areas", async ({ page 
   test.skip(testInfo.project.name !== "mobile");
   await page.goto("/");
   const navigation = page.getByRole("navigation", { name: "移动端主导航" });
-  const portfolio = navigation.getByRole("link", { name: "投资", exact: true });
+  const portfolio = navigation.getByRole("link", { name: "持仓成本", exact: true });
   const decision = navigation.getByRole("link", { name: "决策", exact: true });
 
   await expect(navigation.getByRole("link")).toHaveCount(4);
@@ -90,14 +90,13 @@ test("standalone cash route is absent and investment creation stays in the catal
   await expect(page.locator("#new-investment")).toBeVisible();
 });
 
-test("investment overview exposes compact controls and responsive priority", async ({ page }) => {
+test("cost overview exposes focused controls and responsive priority", async ({ page }) => {
   await page.goto("/portfolio");
 
-  await expect(page.getByTestId("investment-overview-grid")).toBeVisible();
-  await expect(page.getByTestId("portfolio-currency-switcher")).toBeVisible();
-  await expect(page.getByTestId("portfolio-zero-toggle")).toBeVisible();
-  await expect(page.getByTestId("market-investments-panel")).toBeVisible();
-  await expect(page.getByTestId("supporting-investments-column")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "持仓成本", exact: true })).toBeVisible();
+  await expect(page.getByTestId("cost-summary")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "逐只看成本" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "导入 IBKR CSV" }).first()).toBeVisible();
 
   const layout = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,

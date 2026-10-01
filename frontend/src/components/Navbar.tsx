@@ -12,6 +12,7 @@ import {
   isProductNavActive,
   isSectionNavActive,
   NAV_ITEMS,
+  normalizeNavItems,
   productAreaForPath,
   SECTION_NAV,
   USER_UPDATED_EVENT,
@@ -87,6 +88,9 @@ export default function Navbar() {
 
   const area = productAreaForPath(pathname);
   const sectionItems = area && area !== "workbench" ? SECTION_NAV[area] : [];
+  const visibleItems = normalizeNavItems(user?.nav_items)
+    .map((href) => NAV_ITEMS.find((item) => item.href === href))
+    .filter((item): item is typeof NAV_ITEMS[number] => Boolean(item));
 
   return (
     <>
@@ -108,7 +112,7 @@ export default function Navbar() {
                     opacity: tabIndicator.ready ? 1 : 0,
                   }}
                 />
-                {NAV_ITEMS.map((item) => (
+                {visibleItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -177,8 +181,8 @@ export default function Navbar() {
 
       {loggedIn && !researchFocus && (
         <nav className="mobile-primary-navigation fixed inset-x-0 bottom-0 z-[70] border-t border-themed bg-page px-2 pb-[max(.45rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-16px_40px_rgba(0,0,0,.18)] md:hidden" aria-label={t("nav.mobileAria")}>
-          <div className="mx-auto grid max-w-lg grid-cols-4 gap-1">
-            {NAV_ITEMS.map((item) => (
+          <div className="mx-auto grid max-w-lg gap-1" style={{ gridTemplateColumns: `repeat(${visibleItems.length}, minmax(0, 1fr))` }}>
+            {visibleItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

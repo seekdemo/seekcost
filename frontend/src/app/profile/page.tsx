@@ -10,6 +10,7 @@ import { PRESET_THEMES, PRESET_KEYS } from "@/lib/theme";
 import type { UserProfile } from "@/lib/types";
 import { ProfileSkeleton } from "@/components/Skeleton";
 import { useI18n } from "@/components/I18nProvider";
+import { DEFAULT_NAV_ITEMS, NAV_ITEMS, normalizeNavItems } from "@/lib/navigation";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -29,6 +30,9 @@ export default function ProfilePage() {
   const [pwdSaving, setPwdSaving] = useState(false);
 
   const [loadError, setLoadError] = useState("");
+  const [navItems, setNavItems] = useState<string[]>([...DEFAULT_NAV_ITEMS]);
+  const [navSaving, setNavSaving] = useState(false);
+  const [navMsg, setNavMsg] = useState("");
 
   useEffect(() => {
     if (!isLoggedIn()) { router.push("/login"); return; }
@@ -36,6 +40,8 @@ export default function ProfilePage() {
       setProfile(u);
       setNickname(u.nickname || "");
       setDefaultCurrency(u.default_currency || "CNY");
+      setNavItems(normalizeNavItems(u.nav_items));
+      setUser(u);
       // 从服务端同步自定义主题色
       if (u.theme?.startsWith("custom:")) {
         const color = u.theme.slice(7);
@@ -83,6 +89,45 @@ export default function ProfilePage() {
     } catch (err: unknown) {
       setPwdMsg(err instanceof Error ? err.message : t("profile.passwordFailed"));
     } finally { setPwdSaving(false); }
+  };
+
+  const toggleNavItem = (href: string) => {
+    setNavMsg("");
+    if (!navItems.includes(href)) {
+      setNavItems([...navItems, href]);
+    } else if (navItems.length === 1) {
+      setNavMsg(t("profile.navKeepOne"));
+    } else {
+      setNavItems(navItems.filter((item) => item !== href));
+    }
+  };
+
+  const moveNavItem = (href: string, direction: -1 | 1) => {
+    setNavMsg("");
+    setNavItems((current) => {
+      const index = current.indexOf(href);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const saveNavItems = async () => {
+    setNavSaving(true);
+    setNavMsg("");
+    try {
+      const updated = await api.updateProfile({ nav_items: navItems });
+      setProfile(updated);
+      setNavItems(normalizeNavItems(updated.nav_items));
+      setUser(updated);
+      setNavMsg(t("profile.navSaved"));
+    } catch (err: unknown) {
+      setNavMsg(err instanceof Error ? err.message : t("profile.navSaveFailed"));
+    } finally {
+      setNavSaving(false);
+    }
   };
 
   if (loading) {
@@ -169,15 +214,37 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* ── 2. 产品边界 ── */}
-      <section className="rounded-2xl border border-themed bg-surface p-6">
-        <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-muted">Product focus</p>
-        <h2 className="mt-2 text-lg font-semibold text-primary">{t("profile.focusTitle")}</h2>
-        <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">{t("profile.focusDescription")}</p>
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
-          {[t("profile.focusWorkbench"), t("profile.focusPortfolio"), t("profile.focusDecision")].map((label) => (
-            <div key={label} className="rounded-lg border border-themed bg-input px-3 py-3 text-sm text-secondary">{label}</div>
-          ))}
+      {/* ── 2. 一级菜单 ── */}
+      <section className="rounded-2xl border border-themed bg-surface p-4 sm:p-6" aria-labelledby="primary-menu-settings">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="primary-menu-settings" className="text-lg font-semibold text-primary">{t("profile.navTitle")}</h2>
+            <p className="mt-1 text-sm leading-6 text-muted">{t("profile.navDescription")}</p>
+          </div>
+          <button type="button" disabled={navSaving} onClick={() => { setNavItems([...DEFAULT_NAV_ITEMS]); setNavMsg(""); }} className="min-h-10 rounded-lg px-3 text-sm text-secondary hover:bg-surface-hover hover:text-primary disabled:opacity-50">{t("profile.navReset")}</button>
+        </div>
+        <div className="mt-4 space-y-2">
+          {[...navItems, ...NAV_ITEMS.map((item) => item.href).filter((href) => !navItems.includes(href))].map((href) => {
+            const item = NAV_ITEMS.find((candidate) => candidate.href === href)!;
+            const enabled = navItems.includes(href);
+            const index = navItems.indexOf(href);
+            return (
+              <div key={href} className={`flex min-w-0 items-center gap-2 rounded-xl border border-themed px-3 py-2.5 ${enabled ? "bg-input" : "bg-page"}`}>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-primary">{t(item.labelKey)}</span>
+                {enabled && <div className="flex shrink-0 gap-1" role="group" aria-label={t("profile.navOrderFor", { name: t(item.labelKey) })}>
+                  <button type="button" onClick={() => moveNavItem(href, -1)} disabled={navSaving || index === 0} aria-label={t("profile.navMoveUp", { name: t(item.labelKey) })} className="flex h-10 w-10 items-center justify-center rounded-lg text-secondary hover:bg-surface-hover disabled:opacity-30 disabled:hover:bg-transparent">↑</button>
+                  <button type="button" onClick={() => moveNavItem(href, 1)} disabled={navSaving || index === navItems.length - 1} aria-label={t("profile.navMoveDown", { name: t(item.labelKey) })} className="flex h-10 w-10 items-center justify-center rounded-lg text-secondary hover:bg-surface-hover disabled:opacity-30 disabled:hover:bg-transparent">↓</button>
+                </div>}
+                <button type="button" role="switch" aria-checked={enabled} aria-label={t("profile.navToggle", { name: t(item.labelKey) })} onClick={() => toggleNavItem(href)} disabled={navSaving} className={`flex h-10 w-[68px] shrink-0 items-center justify-center rounded-lg border text-xs font-medium transition disabled:opacity-50 ${enabled ? "border-[var(--accent)] bg-[var(--accent-bg)] text-accent" : "border-themed text-muted hover:bg-surface-hover"}`}>
+                  {enabled ? t("profile.navShown") : t("profile.navHidden")}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button type="button" onClick={saveNavItems} disabled={navSaving || JSON.stringify(navItems) === JSON.stringify(normalizeNavItems(profile?.nav_items))} className="min-h-10 rounded-lg bg-accent px-4 text-sm font-medium text-on-accent transition hover:opacity-90 disabled:opacity-50">{navSaving ? t("profile.saving") : t("profile.navSave")}</button>
+          {navMsg && <p role="status" className={`text-sm ${navMsg === t("profile.navSaved") ? "text-ok" : "text-risk"}`}>{navMsg}</p>}
         </div>
       </section>
 

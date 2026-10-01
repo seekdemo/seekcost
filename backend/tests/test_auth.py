@@ -41,6 +41,26 @@ async def test_username_registration_and_login_are_the_only_auth_flows():
             assert profile.json()["username"] == "researcher_01"
             assert "email" not in profile.json()
 
+            reordered = await client.patch(
+                "/api/v1/auth/profile",
+                json={"nav_items": ["/decision", "/", "/tools"]},
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            assert reordered.status_code == 200
+            assert reordered.json()["nav_items"] == ["/decision", "/", "/tools"]
+            refreshed = await client.get(
+                "/api/v1/auth/me",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            assert refreshed.json()["nav_items"] == ["/decision", "/", "/tools"]
+            for invalid_nav in ([], ["/not-a-menu"]):
+                rejected = await client.patch(
+                    "/api/v1/auth/profile",
+                    json={"nav_items": invalid_nav},
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                assert rejected.status_code == 400
+
             duplicate = await client.post(
                 "/api/v1/auth/register",
                 json={"username": "RESEARCHER_01", "password": "strong-pass-02"},
@@ -66,6 +86,7 @@ async def test_username_registration_and_login_are_the_only_auth_flows():
                 if route.path.startswith("/api/v1/auth/")
             }
             assert auth_routes == {
+                "/api/v1/auth/registration",
                 "/api/v1/auth/register",
                 "/api/v1/auth/login",
                 "/api/v1/auth/me",

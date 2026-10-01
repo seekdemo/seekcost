@@ -1,10 +1,10 @@
 export type ProductArea = "workbench" | "portfolio" | "decision" | "tools";
 
 export const NAV_ITEMS = [
-  { href: "/", labelKey: "nav.workbench", area: "workbench", required: true },
-  { href: "/portfolio", labelKey: "nav.portfolio", area: "portfolio", required: true },
-  { href: "/decision", labelKey: "nav.decision", area: "decision", required: true },
-  { href: "/tools", labelKey: "nav.tools", area: "tools", required: true },
+  { href: "/", labelKey: "nav.workbench", area: "workbench" },
+  { href: "/portfolio", labelKey: "nav.portfolio", area: "portfolio" },
+  { href: "/decision", labelKey: "nav.decision", area: "decision" },
+  { href: "/tools", labelKey: "nav.tools", area: "tools" },
 ] as const;
 
 export const OPTIONAL_NAV_ITEMS: typeof NAV_ITEMS[number][] = [];
@@ -17,7 +17,6 @@ export const SECTION_NAV: Record<Exclude<ProductArea, "workbench">, readonly { h
     { href: "/assets", labelKey: "nav.positionsLots" },
     { href: "/trade", labelKey: "nav.transactions" },
     { href: "/import/ibkr", labelKey: "nav.ibkrImport" },
-    { href: "/finance", labelKey: "ux.finance" },
   ],
   decision: [
     { href: "/decision", labelKey: "nav.decisionOverview" },
@@ -63,11 +62,9 @@ export function isSectionNavActive(pathname: string, href: string) {
   return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
 }
 
-/**
- * 旧版允许用户选择大量一级模块。当前版本收敛为四个固定产品区域，历史设置仍保留在
- * 用户数据中，但不再影响主导航，避免升级后出现缺失入口。
- */
+/** Old preferences stored page-level paths, so keep the current default until the user saves this new menu. */
 export function normalizeNavItems(items: string[] | null | undefined) {
-  void items;
-  return [...DEFAULT_NAV_ITEMS];
+  if (!items?.length) return [...DEFAULT_NAV_ITEMS];
+  if (items.some((href) => !DEFAULT_NAV_ITEMS.some((defaultHref) => defaultHref === href))) return [...DEFAULT_NAV_ITEMS];
+  return [...new Set(items)];
 }

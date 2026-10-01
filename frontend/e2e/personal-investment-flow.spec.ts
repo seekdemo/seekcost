@@ -490,7 +490,7 @@ test("responsive navigation does not overflow and legacy notes links redirect", 
     name: testInfo.project.name === "desktop" ? "主导航" : "移动端主导航",
   });
   await expect(navigation.getByRole("link", { name: "工作台", exact: true })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "投资", exact: true })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "持仓成本", exact: true })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "决策", exact: true })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "复盘", exact: true })).toBeVisible();
 });

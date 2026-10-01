@@ -201,7 +201,10 @@ function AssetsContent() {
     const frame = window.requestAnimationFrame(() => {
       const p = loadPrefs();
       setPrefs(p);
-      setFilter(p.defaultZone);
+      // The cost workspace links directly to market holdings without changing
+      // the user's saved catalogue preference or hiding historical records.
+      const requestedZone = new URLSearchParams(window.location.search).get("zone");
+      setFilter(requestedZone === "active" ? "active" : p.defaultZone);
       setMarketFilter(p.defaultMarket);
       setViewMode(p.viewMode);
       setSortKey(p.sortKey);

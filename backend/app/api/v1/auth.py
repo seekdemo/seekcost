@@ -119,7 +119,7 @@ async def me(user: User = Depends(get_current_user)):
 
 # ── 更新个人资料 ───────────────────────────────────────
 VALID_THEMES = {"light", "dark", "emerald", "blue", "violet", "rose", "amber", "cyan"}
-VALID_NAV_ITEMS = {"/watchlist", "/research", "/notes", "/assets", "/dashboard", "/trade", "/import", "/finance", "/cash"}
+VALID_NAV_ITEMS = {"/", "/portfolio", "/decision", "/tools", "/watchlist", "/research", "/notes", "/assets", "/dashboard", "/trade", "/import", "/finance", "/cash"}
 import re
 _CUSTOM_RE = re.compile(r"^custom:#[0-9a-fA-F]{6}$")
 
@@ -142,6 +142,8 @@ async def update_profile(
             raise HTTPException(400, f"不支持的货币: {body.default_currency}")
         user.default_currency = body.default_currency
     if body.nav_items is not None:
+        if not body.nav_items:
+            raise HTTPException(400, "请至少保留一个一级菜单")
         normalized_nav = ["/research" if item == "/notes" else item for item in body.nav_items]
         invalid_items = set(normalized_nav) - VALID_NAV_ITEMS
         if invalid_items:

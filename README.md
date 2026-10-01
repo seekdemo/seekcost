@@ -14,9 +14,9 @@ SeekCost is an MIT-licensed, self-hosted personal investment workbench. Run it o
 
 It is organized around one explicit feedback loop:
 
-**Investment catalog → decision and budget → execution → outcome review → strategy iteration**
+**Understand a company → make a decision → track holding cost → review the outcome**
 
-The catalog can include stocks, ETFs, deposits, gold, real estate, courses, GPT or software subscriptions, and custom capability-building expenses. SeekCost does not try to replace a market-data terminal, property system, or brokerage app. It has no public feed, follower graph, popularity ranking, or automatic publishing. Investment, decision, and transaction data remain private to the current user.
+The primary cost workspace focuses on open market holdings and the costs currently recorded for them. Legacy records for deposits, physical assets, personal finance and capability spending remain in the database and their existing pages still work, but they are no longer promoted in the main cost workflow. SeekCost does not try to replace a market-data terminal or brokerage app. It has no public feed, follower graph, popularity ranking, or automatic publishing. Investment, decision, and transaction data remain private to the current user.
 
 ## Self-host in a few steps
 
@@ -85,21 +85,19 @@ The same workspace adapts to smaller screens. Public About and how-to pages expl
 
 <img src="docs/images/watchlist-mobile.png" width="340" alt="SeekCost mobile watchlist in Chinese — fictional demo data" />
 
-## Investment model
+## Holding-cost workspace
 
-SeekCost keeps three investment families visible without mixing their accounting:
+The primary cost view shows open market holdings, recorded per-unit and total costs, decision costs, reference prices and estimated unrealized P&L. Totals use current FX rates, not historical FX reconciliation. An IBKR CSV import can overwrite the stored broker cost, so this first version **does not yet independently certify a difference between IBKR and SeekCost calculations**. Open an individual holding to inspect transactions and imported lots. CSV remains the only IBKR data-acquisition method; there is no direct IBKR API connection.
 
-- Market investments: stocks and ETFs, measured by quantity, cost, current value and P&L
-- Defensive and physical assets: deposits, bond funds, gold, collectibles and real estate, measured by capital and current value
-- Capabilities and tools: courses, GPT memberships, software and acquisition spend, measured by cumulative spend, review and attributed return
+Older asset and personal-finance records are preserved, but the main navigation no longer presents them as core SeekCost tasks.
 
-Capability investments do not inflate portfolio net worth and are not given stock-style P&L. IBKR reconciliation remains available as a dedicated ledger inside market investing, not as the identity of the whole product.
+In **Personal settings → Main menu**, each account can show or hide any top-level section (including Holding costs) and reorder the menu on desktop and mobile. Hiding a section removes only its navigation entry, not its page or data.
 
 ## What it does
 
 - Investment workbench: surfaces only items that may change a position or decision, without turning into a news feed
-- Investment overview: keeps market, physical and capability investments in one catalog with explicit accounting boundaries
-- IBKR ledger: reconciles brokerage positions, costs, lots, cash, transactions, and net realized P&L as a dedicated market-investment workflow
+- Holding-cost workspace: focuses on open positions, recorded costs and supporting transaction/lot evidence
+- IBKR CSV import: imports selected activity-statement data; independent broker-versus-calculated cost reconciliation is not yet implemented
 - Decision system: organizes candidates, investment theses, invalidation conditions, trade plans, and transparent quantitative evidence
 - Trade review: connects outcomes back to pre-trade reasoning and records execution gaps and strategy improvements
 - Decision records: stores tags, topics, review dates, and personal annotations without content distribution
