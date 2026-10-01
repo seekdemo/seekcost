@@ -1,7 +1,10 @@
-export interface IntradayPoint { timestamp: number; price: number }
+export interface IntradayPoint { timestamp: number; price: number; volume?: number | null }
 
 export function normalizeIntradayPoints(points: IntradayPoint[]): IntradayPoint[] {
-  return Array.from(new Map(points.filter(point => Number.isFinite(point.timestamp) && Number.isFinite(point.price) && point.price > 0).map(point => [point.timestamp, point])).values()).sort((a, b) => a.timestamp - b.timestamp);
+  return Array.from(new Map(points.filter(point => Number.isFinite(point.timestamp) && Number.isFinite(point.price) && point.price > 0).map(point => {
+    const normalized = point.volume === undefined ? point : { ...point, volume: typeof point.volume === "number" && Number.isFinite(point.volume) && point.volume >= 0 ? point.volume : null };
+    return [point.timestamp, normalized] as const;
+  })).values()).sort((a, b) => a.timestamp - b.timestamp);
 }
 
 export function nearestIntradayIndex(points: IntradayPoint[], timestamp: number): number {

@@ -39,6 +39,26 @@ def test_only_latest_exchange_session_is_displayed():
     assert len(result["points"]) == 1
 
 
+def test_volume_stays_aligned_when_prices_are_missing():
+    data = chart()
+    data["indicators"]["quote"][0]["volume"] = [120, 999, 0]
+    assert [p["volume"] for p in normalize_quote(data)["points"]] == [120, 0]
+
+
+@pytest.mark.parametrize("volumes", [None, [], [-1], [float("nan"), 1, float("inf")], [True]])
+def test_missing_or_invalid_volume_is_unknown_not_zero(volumes):
+    data = chart()
+    data["indicators"]["quote"][0]["volume"] = volumes
+    assert [p["volume"] for p in normalize_quote(data)["points"]] == [None, None]
+
+
+def test_volume_is_filtered_with_the_exchange_session():
+    data = chart()
+    data["timestamp"][0] -= 86400
+    data["indicators"]["quote"][0]["volume"] = [120, 999, 450]
+    assert [p["volume"] for p in normalize_quote(data)["points"]] == [450]
+
+
 @pytest.mark.asyncio
 async def test_requests_are_coalesced_and_cached(monkeypatch):
     calls = []

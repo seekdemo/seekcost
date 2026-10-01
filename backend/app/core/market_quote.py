@@ -25,12 +25,17 @@ def _positive(value):
 def normalize_quote(result: dict) -> dict:
     meta = result.get("meta") or {}
     tz = ZoneInfo(meta.get("exchangeTimezoneName") or "UTC")
-    closes = ((result.get("indicators") or {}).get("quote") or [{}])[0].get("close") or []
+    series = ((result.get("indicators") or {}).get("quote") or [{}])[0]
+    closes = series.get("close") or []
+    volumes = series.get("volume") or []
     points = []
-    for timestamp, close in zip(result.get("timestamp") or [], closes):
+    for index, (timestamp, close) in enumerate(zip(result.get("timestamp") or [], closes)):
         price = _positive(close)
         if price is not None and isinstance(timestamp, (int, float)) and math.isfinite(timestamp):
-            points.append({"timestamp": int(timestamp), "price": price})
+            volume = volumes[index] if index < len(volumes) else None
+            if isinstance(volume, bool) or not isinstance(volume, (int, float)) or not math.isfinite(volume) or volume < 0:
+                volume = None
+            points.append({"timestamp": int(timestamp), "price": price, "volume": volume})
     points = sorted({point["timestamp"]: point for point in points}.values(), key=lambda p: p["timestamp"])
     if not points:
         raise ValueError("No intraday prices")

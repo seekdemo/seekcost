@@ -9,7 +9,7 @@ export interface IntradayQuote {
   price: number | null;
   previous_close: number | null;
   change_pct: number | null;
-  points: { timestamp: number; price: number }[];
+  points: { timestamp: number; price: number; volume?: number | null }[];
   as_of: number | null;
   source: string;
   currency?: string;

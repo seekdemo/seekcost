@@ -86,6 +86,14 @@ export default function IntradayChart({ symbol, market }: { symbol: string; mark
     setSelected(nearestIntradayIndex(points, stamp));
   };
   const direction = baseline && active ? active.price >= baseline ? "var(--up)" : "var(--down)" : "var(--accent)";
+  const volumeTop = 288;
+  const volumeBottom = 370;
+  const volumes = points.flatMap(point => point.volume == null ? [] : [point.volume]);
+  const hasVolume = volumes.length > 0;
+  const maxVolume = Math.max(...volumes, 1);
+  const volumeLabel = (value: number) => value.toLocaleString(localeTag, { maximumFractionDigits: 2 });
+  const compactVolume = (value: number) => value.toLocaleString(localeTag, { notation: "compact", maximumFractionDigits: 1 });
+  const barWidth = Math.min(12, Math.max(1, (plotRight - plotLeft) * 240 / Math.max(last - first, 300)));
 
   return <div className="mt-4 min-w-0" data-testid="dossier-intraday">
     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -101,16 +109,17 @@ export default function IntradayChart({ symbol, market }: { symbol: string; mark
         <span className="text-sm text-secondary">{time(active.timestamp)}</span>
         <strong className="text-2xl font-semibold text-primary">{price(active.price)}</strong>
         {baseline != null && <><span className="text-sm" style={{ color: direction }}>{active.price >= baseline ? "+" : ""}{((active.price / baseline - 1) * 100).toFixed(2)}%</span><span className="text-xs text-muted">{text("昨收", "Previous close")} {price(baseline)}</span></>}
+        <span className="text-xs text-secondary">{text("该时段成交量", "Interval volume")} <span className="font-medium text-primary">{active.volume == null ? "—" : volumeLabel(active.volume)}</span></span>
       </div>
       <div className="min-w-0 rounded-md border border-themed bg-input p-3">
-        <svg ref={svgRef} width="100%" height="300" viewBox={`0 0 ${width} 300`} role="img" aria-label={`${symbol} ${text("分时价格图，使用左右方向键查看价格", "intraday prices; use Left and Right arrows to inspect")}`} tabIndex={0}
+        <svg ref={svgRef} width="100%" height="408" viewBox={`0 0 ${width} 408`} role="img" aria-label={`${symbol} ${text("分时价格及成交量图，使用左右方向键查看", "intraday prices and volume; use Left and Right arrows to inspect")}`} tabIndex={0}
           className="block w-full outline-offset-2" style={{ touchAction: "pan-y" }}
           onPointerMove={event => selectAt(event.clientX)} onPointerDown={event => selectAt(event.clientX)} onPointerLeave={() => setSelected(null)}
           onKeyDown={event => {
             const next = event.key === "ArrowLeft" ? index - 1 : event.key === "ArrowRight" ? index + 1 : event.key === "Home" ? 0 : event.key === "End" ? points.length - 1 : null;
             if (next != null) { event.preventDefault(); setSelected(Math.min(points.length - 1, Math.max(0, next))); }
           }}>
-          <title>{symbol} {text("分时走势", "intraday prices")}</title>
+          <title>{symbol} {text("分时走势与每 5 分钟成交量", "intraday prices and five-minute volume")}</title>
           {[0, 1, 2, 3].map(i => {
             const value = high + padding - range * i / 3;
             const height = y(value);
@@ -118,9 +127,24 @@ export default function IntradayChart({ symbol, market }: { symbol: string; mark
           })}
           {baseline != null && <line data-testid="intraday-previous-close" x1={plotLeft} x2={plotRight} y1={y(baseline)} y2={y(baseline)} stroke="var(--text-muted)" strokeDasharray="4 4" />}
           <path d={path} fill="none" stroke={direction} strokeWidth="1.8" strokeLinejoin="round" />
-          <line x1={x(active.timestamp)} x2={x(active.timestamp)} y1={plotTop} y2={plotBottom} stroke="var(--text-muted)" strokeDasharray="3 4" />
+          <text x={plotLeft} y={volumeTop - 10} fill="var(--text-secondary)" fontSize="11">{text("成交量 · 每 5 分钟", "Volume · per 5 minutes")}</text>
+          <line x1={plotLeft} x2={plotRight} y1={volumeTop} y2={volumeTop} stroke="var(--border)" />
+          <line x1={plotLeft} x2={plotRight} y1={volumeBottom} y2={volumeBottom} stroke="var(--border)" />
+          {hasVolume ? <g data-testid="intraday-volume">
+            {points.map((point, i) => {
+              if (point.volume == null) return null;
+              const height = point.volume / maxVolume * (volumeBottom - volumeTop);
+              const previous = points[i - 1]?.price ?? baseline;
+              const color = previous == null ? "var(--accent)" : point.price >= previous ? "var(--up)" : "var(--down)";
+              const left = Math.min(plotRight - barWidth, Math.max(plotLeft, x(point.timestamp) - barWidth / 2));
+              return <rect key={point.timestamp} x={left} y={volumeBottom - height} width={barWidth} height={height} fill={color} opacity={selected === i ? 1 : .55}><title>{time(point.timestamp)} · {text("成交量", "Volume")} {volumeLabel(point.volume)}</title></rect>;
+            })}
+            <text x={plotRight + 8} y={volumeTop + 4} fill="var(--text-secondary)" fontSize="11">{compactVolume(Math.max(...volumes))}</text>
+            <text x={plotRight + 8} y={volumeBottom + 4} fill="var(--text-secondary)" fontSize="11">0</text>
+          </g> : <text x={(plotLeft + plotRight) / 2} y={(volumeTop + volumeBottom) / 2} textAnchor="middle" fill="var(--text-muted)" fontSize="12">{text("行情源暂未提供成交量", "Volume unavailable from provider")}</text>}
+          <line x1={x(active.timestamp)} x2={x(active.timestamp)} y1={plotTop} y2={volumeBottom} stroke="var(--text-muted)" strokeDasharray="3 4" />
           <circle cx={x(active.timestamp)} cy={y(active.price)} r="3" fill={direction} />
-          {[0, .5, 1].map(ratio => <text key={ratio} x={plotLeft + ratio * (plotRight - plotLeft)} y="285" textAnchor={ratio === 0 ? "start" : ratio === 1 ? "end" : "middle"} fill="var(--text-secondary)" fontSize="11">{time(first + (last - first) * ratio)}</text>)}
+          {[0, .5, 1].map(ratio => <text key={ratio} x={plotLeft + ratio * (plotRight - plotLeft)} y="396" textAnchor={ratio === 0 ? "start" : ratio === 1 ? "end" : "middle"} fill="var(--text-secondary)" fontSize="11">{time(first + (last - first) * ratio)}</text>)}
         </svg>
       </div>
     </> : <div role={failed ? "alert" : "status"} className="flex min-h-[300px] flex-col items-center justify-center gap-2 rounded-md bg-input px-4 text-center text-sm text-secondary">
